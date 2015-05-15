@@ -4,7 +4,6 @@ Tags: widget, login, registration, theme, custom, log in, register, sidebar, gra
 Requires at least: 3.7
 Tested up to: 4.2
 Stable tag: 6.3.11
-Git: https://github.com/autocircle/bagmasterpiece
 
 Themes the WordPress login pages according to your theme.
 
