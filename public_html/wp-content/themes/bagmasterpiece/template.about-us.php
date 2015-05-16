@@ -30,9 +30,9 @@
 			<h1 class="entry-title"><?php the_title();?></h1>
 			<?php endif;?>
 				
-			<div class="entry-content">
+<!--			<div class="entry-content">
 				<?php the_content(); ?>
-			</div><!-- .entry-content -->
+			</div> .entry-content -->
 		
 			<div class="row about-padding">
 				<div class="col-md-5 col-lg-5">

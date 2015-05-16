@@ -81,7 +81,7 @@
 							</div>
 						</div>
 						  
-						<button type="submit" class="btn btn-default take-me"><img src="images/take-me.png" class="img-responsive" alt="Responsive image"></button>
+						<button type="submit" class="btn btn-default take-me"><img src="<?php echo get_template_directory_uri(); ?>/images/take-me.png" class="img-responsive" alt="Responsive image"></button>
 					</form>										
 				</div>
 			</div>
