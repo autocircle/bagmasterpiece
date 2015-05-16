@@ -2286,3 +2286,9 @@ input.invalid{
 .loop-product-section p.social-wrap {
   margin-top: -2px;
 }
+.col2-set.addresses {
+  border: 1px solid #9C9C9C;
+  border-radius: 5px;
+  padding: 0 20px;
+  color: #FDFDFD;
+} 
