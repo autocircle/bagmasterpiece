@@ -259,9 +259,19 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 
 											?>
 
+											<?php $counter = get_post_meta($post_id, 'offer_reoffer_counter', true);?>
+
 											<?php if( $reoffer ):?>
+											<?php commisize_budget($reoffer, $post_id);?>
 											<div class="reoffer">
 											     <p class="text-center"><strong>Your Offer:</strong>&nbsp;<span><?php echo wc_price($reoffer, array('decimals' => 0));?></span></p>
+											</div>
+											<?php endif;?>
+
+											<?php if( $counter ):?>
+											<?php commisize_budget($counter, $post_id);?>
+                                            <div class="reoffer">
+											     <p class="text-center"><strong>Offerd:</strong>&nbsp;<span><?php echo wc_price($counter, array('decimals' => 0));?></span></p>
 											</div>
 											<?php endif;?>
 
@@ -343,19 +353,108 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 											<?php elseif( $self_requested ):?>
 
 											    <?php $reoffer = get_post_meta($post_id, 'offer_reoffer', true);?>
+											    <?php $counter = get_post_meta($post_id, 'offer_reoffer_counter', true);?>
+											    <?php
+
+    											    $accept_offer_url = '';
+    											    $accept_offer_list_url = add_query_arg(array('view' => 'accepted','offer_id' => $offer),get_permalink( get_queried_object_id() ));
+    											    $base_url = add_query_arg(array('view' => 'offer','offer_id' => $post_id),get_permalink( get_queried_object_id() ));
+
+    											    $arg = array(
+    											        'action' => 'accept',
+    											        'return_url' => $accept_offer_list_url
+    											    );
+    											    $arg2 = array(
+    											        'action' => 'cancel',
+    											        'return_url' => $base_url
+    											    );
+
+    											    $accept_offer_url = wp_nonce_url(add_query_arg( $arg, $base_url ), 'really-accept-the-offer');
+    											    $cancel_offer_url = wp_nonce_url(add_query_arg( $arg2, $base_url ), 'really-cancel-the-offer');
+
+											    ?>
 
 												<?php if( $reoffer ):?>
-												<div class="reoffer">
-												     <p class="text-center"><strong>Offered:</strong>&nbsp;<span><?php echo wc_price($reoffer, array('decimals' => 0));?></span></p>
-												</div>
+												    <?php commisize_budget($reoffer, $post_id);?>
+    												<div class="reoffer">
+    												     <p class="text-center"><strong>Offered:</strong>&nbsp;<span><?php echo wc_price($reoffer, array('decimals' => 0));?></span></p>
+    												</div>
+                                                    <?php if( $counter ):?>
+                                                    <?php commisize_budget($counter, $post_id);?>
+                                                    <div class="reoffer">
+    												     <p class="text-center"><strong>Your Offer:</strong>&nbsp;<span><?php echo wc_price($counter, array('decimals' => 0));?></span></p>
+    												</div>
+                                                    <?php else:?>
+    												<div class="action-buttons">
+        												<p>
+        													<a class="btn btn-default" href="<?php echo $accept_offer_url;?>">Accept</a>
+        													<button class="btn btn-default" data-toggle="modal" data-target="#cancelOffer">Decline</button>
+        													<button class="btn btn-default btn-reoffer" data-toggle="modal" data-target="#reOffer">Make an offer</button>
+        												</p>
+    												</div>
+    												<div class="modal fade" id="cancelOffer" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    												  <div class="modal-dialog">
+    												    <div class="modal-content">
+    												      <div class="modal-body">
+    												      	<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    													      <p>Are you sure that you want to decline this offer? This offer will not be available to accept anymore.</p>
 
-												<div class="action-buttons">
-    												<p>
-    													<a class="btn btn-default" href="<?php //echo $accept_offer_url;?>">Accept</a>
-    													<button class="btn btn-default" data-toggle="modal" data-target="#cancelOffer">Decline</button>
-    													<button class="btn btn-default btn-reoffer" data-toggle="modal" data-target="#reOffer">Make an offer</button>
-    												</p>
-												</div>
+    												      	  <button type="button" class="btn btn-default btn-previous" data-dismiss="modal">Cancel</button>
+    												      	  <a href="<?php echo $cancel_offer_url;?>" class="btn btn-default btn-continue">Confirm</a>
+    												      </div>
+    												    </div>
+    												  </div>
+    												</div>
+    												<div class="modal fade" id="reOffer" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                									  <div class="modal-dialog modal-sm">
+                									    <div class="modal-content">
+                									      <div class="modal-header">
+                									        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                									        <h4 class="modal-title" id="myModalLabel">Make an offer</h4>
+                									      </div>
+                									      <div class="modal-body">
+                									               <script type="text/javascript">
+
+                									               jQuery(document).ready(function($){
+                    									               $('#reoffersubmit').on('click', function(e){
+                        									               if($(this).hasClass('disabled')){
+                            									               return;
+                            									           }
+                        									               $('#res').text('');
+                        									               $(this).addClass('disabled');
+                        									               e.preventDefault();
+                        									               var data = {
+                           									           			'action': 'reoffer',
+                           									           			'offer_id': <?php echo $post_id?>,
+                           									           			're_offer_amount': $('#reofferamount').val()
+                           									           	   };
+                        									               $.post(woocommerce_params.ajax_url, data, function(response) {
+                            									               response = JSON.parse(response);
+                            									               if(response.status == 200){
+                                									               $('#reofferamount').val('');
+                                									           }
+                        									            	   $('#reoffersubmit').removeClass('disabled');
+                        									            	   $('#res').text(response.message);
+                                   									       });
+
+                        									               return false;
+                    									               });
+                									               });
+
+
+                									               </script>
+                									               <div id="res"></div>
+                									               <form action="" method="post" id="reofferform">
+                									                   <input type="text" name="reofferamount" id="reofferamount" value="" placeholder="Your amount">
+                									                   <button type="button" id="reoffersubmit" class="btn btn-default">Confirm</button>
+                									               </form>
+                									      </div>
+                									    </div>
+                									  </div>
+                									</div>
+                									<?php endif;?>
+
+
 
 												<?php endif;?>
 

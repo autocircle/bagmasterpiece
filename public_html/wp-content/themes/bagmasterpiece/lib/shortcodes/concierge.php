@@ -96,7 +96,7 @@ function concierge_form_cb($atts, $content = ""){
 									<td>
 										<?php
 											$amount = get_post_meta(get_the_ID(),'offer_budget', true);
-											commisize_budget($amount);
+											//commisize_budget($amount);
 											echo wc_price($amount, array('decimals' => 0));
 										?>
 									</td>
@@ -517,10 +517,20 @@ function concierge_form_cb($atts, $content = ""){
 												      				<?php
 												      					$amount = get_post_meta($offer, 'offer_budget',true);
 												      					$reoffer = get_post_meta($offer, 'offer_reoffer', true);
+												      					$counter = get_post_meta($offer, 'offer_reoffer_counter', true);
 
 												      					commisize_budget($amount, $offer);
 
-												      					echo wc_price($amount, array('decimals' => 0));
+												      					if( $counter ){
+												      					    commisize_budget($counter, $offer);
+												      					    echo '<small><del>' . wc_price($amount, array('decimals' => 0)) . '</del></small>&nbsp;';
+												      					    echo wc_price($counter, array('decimals' => 0));
+												      					}
+												      					else{
+												      					    echo wc_price($amount, array('decimals' => 0));
+												      					}
+
+
 												      				?>
 												      			</td>
 												      			<td>
@@ -545,7 +555,7 @@ function concierge_form_cb($atts, $content = ""){
 												      				<a target="_blank" href="<?php echo $view_offer;?>" class="btn btn-default"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> View</a>
 												      				<?php endif;?>
 
-												      				<?php if( !$reoffer):?>
+												      				<?php if( !$reoffer ):?>
 
 												      				<button class="btn btn-default" data-toggle="modal" data-target="#reofferModal<?php the_ID();?>">Make an offer</button>
 
@@ -558,7 +568,7 @@ function concierge_form_cb($atts, $content = ""){
                                 									        <h4 class="modal-title" id="myModalLabel">Make an offer</h4>
                                 									      </div>
                                 									      <div class="modal-body">
-                                									           <?php if( !get_post_meta($offer, 'offer_reoffer', true)):?>
+                                									           <?php //if( !get_post_meta($offer, 'offer_reoffer', true)):?>
                                 									               <script type="text/javascript">
 
                                     									               jQuery(document).ready(function($){
@@ -594,7 +604,7 @@ function concierge_form_cb($atts, $content = ""){
                                 									                   <input type="text" name="reofferamount" id="reofferamount" value="" placeholder="Your amount">
                                 									                   <button type="button" id="reoffersubmit" class="btn btn-default">Confirm</button>
                                 									               </form>
-                                									           <?php endif;?>
+                                									           <?php //endif;?>
                                 									      </div>
                                 									    </div>
                                 									  </div>

@@ -1950,6 +1950,22 @@ function bmp_offer_action(){
 			$offer_id = (int) esc_attr($_GET['offer_id']);
 
 			if( is_offer_available($offer_id) ){
+
+			    $post = get_post($offer_id);
+			    $self_requested = $post->post_author == get_current_user_id();
+
+			    $reoffer = get_post_meta($offer_id, 'offer_reoffer', true);
+			    $counter = get_post_meta($offer_id, 'offer_reoffer_counter', true);
+
+			    if( $reoffer && $self_requested){
+			        commisize_budget($reoffer, $offer_id);
+			        update_post_meta( $offer_id, 'offer_budget', $reoffer);
+			    }
+			    elseif( !$self_requested && $counter ){
+			        commisize_budget($counter, $offer_id);
+			        update_post_meta( $offer_id, 'offer_budget', $counter);
+			    }
+
 				$r = update_post_meta( $offer_id, '_offer_status', 'accepted');
 
 				if( $r ){
@@ -2666,7 +2682,6 @@ function get_converted_currency( $amount = 0, $reverse = false){
         $new_amount = ( $amount / $woocommerce_currency_converter->rates->$store_currency ) * $woocommerce_currency_converter->rates->$target_currency;
 
         $new_amount = round($new_amount, 2);
-
     }
 
     return $new_amount;
@@ -2693,7 +2708,17 @@ function BMP_concierge_reoffer(){
     $amount = get_converted_currency($amount, true);
 
 
-    $status = update_post_meta($offer_id, 'offer_reoffer', $amount);
+    $post = get_post($offer_id);
+    $self_requested = $post->post_author == get_current_user_id();
+
+    if( $self_requested ){
+        $status = update_post_meta($offer_id, 'offer_reoffer_counter', $amount);
+    }
+    else{
+        $status = update_post_meta($offer_id, 'offer_reoffer', $amount);
+    }
+
+
 
     if( $status ){
         echo json_encode(array('status' => '200', 'message' => 'Successfully submitted.'));
