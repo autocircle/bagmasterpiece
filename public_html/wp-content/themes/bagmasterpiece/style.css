@@ -583,7 +583,7 @@ section#flashsalepage ul li a {
 	background: #083b2b;
 }*/
 .page-header-image{
-	min-height: 352px;
+	min-height: 237px;
 	width:100%;
 	margin-top: -20px;
 	position: relative;
@@ -598,7 +598,7 @@ section#flashsalepage ul li a {
 	position: absolute;
 	color: rgb(255, 255, 255);
 	font-size: 80px;
-	top: 38%;
+	top: 28%;
 	margin: 0px;
 	text-align: center;
 	width: 100%;
