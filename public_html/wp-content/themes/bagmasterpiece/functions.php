@@ -1090,7 +1090,8 @@ function BMP_save_consignment(){
 		"{$type}_receipt_pic" 			=> $form_data['receiptPic'],
 		"{$type}_receipt" 				=> $form_data['hasReceipt'],
 		"{$type}_params" 				=> $obj['formParam'],
-		"{$type}_package_id" 			=> $obj['packageId']
+		"{$type}_package_id" 			=> $obj['packageId'],
+		"{$type}_consigner" 			=> $user_id
 	);
 
 	foreach( $params as $param ){
@@ -1113,7 +1114,7 @@ function BMP_save_consignment(){
 
 	// @todo redirect to list
 
-	echo json_encode(array('status'=>200,'message'=>'Successfull', 'redirect_to' => $obj['return_url']));
+	echo json_encode(array('status'=>200,'message'=>'Successful', 'redirect_to' => $obj['return_url']));
 	die();
 }
 
@@ -1816,7 +1817,7 @@ function BMP_custom_login_form_register(){
 	}
 }
 
-function is_offer_available( $offer_id ){
+function is_offer_available( $offer_id, $human = true ){
 
 	global $bagmasterpiece;
 
@@ -1836,7 +1837,12 @@ function is_offer_available( $offer_id ){
 
 	$to = mktime( date('H', $from), date('i', $from), date('s', $from), date('m', $from), $advance, date('y', $from) );
 
-	return BMP_human_time_diff(time(), $to);
+	if( $human ){
+	    return BMP_human_time_diff(time(), $to);
+	}
+
+	return $diff = (int) abs( $to - time() );
+
 }
 
 function get_bmp_data( $post_id = 0, $meta_key = '', $return = false ){

@@ -162,7 +162,60 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 
 											<div class="timer">
 												<p class="text-center">Time left</p>
-												<h1 class="date-block"><?php echo is_offer_available($post_id);?></h1>
+
+												<h1 class="date-block">
+												    <span class="timer" id="cart-countdown"><?php echo is_offer_available($post_id);?></span>
+												</h1>
+
+												<script>
+                                                	function startTimer(duration, display) {
+                                                		var start = Date.now(),
+                                                			diff,
+                                                			minutes,
+                                                			seconds,
+                                                			interval;
+                                                		function timer() {
+                                                			// get the number of seconds that have elapsed since
+                                                			// startTimer() was called
+                                                			diff = duration - (((Date.now() - start) / 1000) | 0);
+
+                                                			// does the same job as parseInt truncates the float
+                                                			hours   = ( diff / 3600 ) | 0;
+                                                			diff2   =  diff % 3600;
+                                                			minutes = (diff2 / 60) | 0;
+                                                			seconds = (diff2 % 60) | 0;
+
+                                                			hours 	= hours   < 10 ? "0" + hours   : hours;
+                                                			minutes = minutes < 10 ? "0" + minutes : minutes;
+                                                			seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                                                			display.textContent = hours + ":" + minutes + ":" + seconds;
+
+                                                			if (diff <= 0) {
+                                                				// add one second so that the count down starts at the full duration
+                                                				// example 05:00 not 04:59
+                                                				start = Date.now() + 1000;
+                                                				clearInterval(interval);
+                                                				window.location.reload();
+                                                			}
+
+                                                		};
+                                                		// we don't want to wait a full second before the timer starts
+                                                		timer();
+                                                		interval = setInterval(timer, 1000);
+                                                	}
+
+                                                	jQuery(document).ready(function($){
+                                                		var fiveMinutes = <?php echo is_offer_available($post_id, false);?>,
+                                                		display = document.querySelector('#cart-countdown');
+
+                                                		if( fiveMinutes > 0 ){
+                                                			startTimer(fiveMinutes, display);
+                                                		}
+                                                	});
+
+                                                </script>
+
 											</div>
 
 											<?php
