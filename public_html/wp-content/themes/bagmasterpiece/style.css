@@ -505,18 +505,18 @@ section#flashsalepage ul li a {
 /*===== custom styling ====*/
 .hero-home{
 	width:100%;
-	min-height: 100vh;
+	min-height: 80vh;
 }
 .hero-home .hero-home-content{
 	width:100%;
-	min-height: 100vh;
+	min-height: 80vh;
 	background-color: rgba(0, 0, 0, 0.80);
 }
 .hero-home .hero-home-content #main-content{
 	min-height: 100%;
 	_margin-top: -72px !important;
 	margin-top: -20px !important;
-	padding-bottom: 60px;
+	padding-bottom: 0px;
 }
 .home-logo{
 	margin-top:20px;
@@ -532,7 +532,7 @@ section#flashsalepage ul li a {
 .home-featured-boxes .widget:first-child{
 	margin-left: 33.3333%;
 	margin-right: 33.3333%;
-	margin-bottom: 20px;
+	margin-bottom: 0px;
 	width:33.3333%;
 }
 .home-featured-boxes .widget:nth-child(2){
@@ -545,8 +545,10 @@ section#flashsalepage ul li a {
 	float:left;
 }
 .home-featured-boxes .widget img{
-	display: block;
-	margin:0 auto;
+    display: block;
+    margin: 0 auto;
+    height: auto;
+    width: 220px;
 }
 .home-featured-boxes .widget h1{
 	display: none;
