@@ -453,7 +453,6 @@ function concierge_meta_box_callback($post){
 	$style = get_term_by('id', $posted["{$type}_style"], 'concierge');
 	$model = get_term_by('id', $posted["{$type}_model"], 'concierge');
 
-
 	?>
 		<style>
 			.concierge_meta_box .item{
@@ -482,21 +481,33 @@ function concierge_meta_box_callback($post){
 			</li>
 			<li class="item">
 				<label for="concierge_brand">Brand</label>
+				<?php if( $brand ):?>
 				<select name="concierge_brand" id="concierge_brand">
 					<option value="<?php echo $brand->term_id?>"><?php echo $brand->name?></option>
 				</select>
+				<?php else:?>
+				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_brand"])?>">
+				<?php endif;?>
 			</li>
 			<li class="item">
 				<label for="concierge_style">Style</label>
+				<?php if( $style ):?>
 				<select name="concierge_style" id="concierge_style">
 					<option value="<?php echo $style->term_id?>"><?php echo $style->name?></option>
 				</select>
+				<?php else:?>
+				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_style"])?>">
+				<?php endif;?>
 			</li>
 			<li class="item">
 				<label for="concierge_model">Model</label>
+				<?php if( $model ):?>
 				<select name="concierge_model" id="concierge_model">
-					<option value="<?php echo $item->term_id?>"><?php echo $model->name?></option>
+					<option value="<?php echo $model->term_id?>"><?php echo $model->name?></option>
 				</select>
+				<?php else:?>
+				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_model"])?>">
+				<?php endif;?>
 			</li>
 
 			<?php if( $raw_params != '' and is_array($params) ):?>
@@ -552,7 +563,7 @@ function concierge_meta_box_callback($post){
 			</li>
 			-->
 			<li class="item">
-				<label for="concierge_budget">Budget</label>
+				<label for="concierge_budget">Budget (<?php echo get_woocommerce_currency()?>)</label>
 				<input type="text" name="concierge_budget" id="concierge_budget" value="<?php echo esc_attr($posted["{$type}_budget"])?>">
 			</li>
 			<li class="item">
@@ -677,22 +688,34 @@ function consignment_meta_box_callback($post){
 				</select>
 			</li>
 			<li class="item">
-				<label for="consignment_brand">Brand</label>
-				<select name="consignment_brand" id="consignment_brand">
+				<label for="concierge_brand">Brand</label>
+				<?php if( $brand ):?>
+				<select name="concierge_brand" id="concierge_brand">
 					<option value="<?php echo $brand->term_id?>"><?php echo $brand->name?></option>
 				</select>
+				<?php else:?>
+				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_brand"])?>">
+				<?php endif;?>
 			</li>
 			<li class="item">
-				<label for="consignment_style">Style</label>
-				<select name="consignment_style" id="consignment_style">
+				<label for="concierge_style">Style</label>
+				<?php if( $style ):?>
+				<select name="concierge_style" id="concierge_style">
 					<option value="<?php echo $style->term_id?>"><?php echo $style->name?></option>
 				</select>
+				<?php else:?>
+				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_style"])?>">
+				<?php endif;?>
 			</li>
 			<li class="item">
-				<label for="consignment_model">Model</label>
-				<select name="consignment_model" id="consignment_model">
-					<option value="<?php echo $item->term_id?>"><?php echo $item->name?></option>
+				<label for="concierge_model">Model</label>
+				<?php if( $model ):?>
+				<select name="concierge_model" id="concierge_model">
+					<option value="<?php echo $model->term_id?>"><?php echo $model->name?></option>
 				</select>
+				<?php else:?>
+				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_model"])?>">
+				<?php endif;?>
 			</li>
 
 			<?php if( $raw_params != '' and is_array($params) ):?>

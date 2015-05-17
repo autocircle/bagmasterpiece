@@ -104,6 +104,8 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 
 									$pics = bmp_clean_array(get_post_meta($post_id, 'offer_pics', true));
 
+									$thumnail = null;
+
 									if( is_array($pics) and !empty($pics) ){
 
 										$first = array_shift($pics);
@@ -240,7 +242,7 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 
 											<?php
 												$accept_offer_url = '';
-												$accept_offer_list_url = add_query_arg(array('view' => 'accepted','offer_id' => $offer),get_permalink( get_queried_object_id() ));
+												$accept_offer_list_url = add_query_arg(array('view' => 'accepted','offer_id' => $post_id),get_permalink( get_queried_object_id() ));
 												$base_url = add_query_arg(array('view' => 'offer','offer_id' => $post_id),get_permalink( get_queried_object_id() ));
 
 												$arg = array(
@@ -357,7 +359,7 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 											    <?php
 
     											    $accept_offer_url = '';
-    											    $accept_offer_list_url = add_query_arg(array('view' => 'accepted','offer_id' => $offer),get_permalink( get_queried_object_id() ));
+    											    $accept_offer_list_url = add_query_arg(array('view' => 'accepted','offer_id' => $post_id),get_permalink( get_queried_object_id() ));
     											    $base_url = add_query_arg(array('view' => 'offer','offer_id' => $post_id),get_permalink( get_queried_object_id() ));
 
     											    $arg = array(

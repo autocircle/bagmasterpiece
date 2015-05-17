@@ -355,8 +355,8 @@
                     		array(
                     				'id'       => 'blog-header',
                     				'type'     => 'media',
-                    				'title'    => __( 'Blog Logo', 'redux-framework-demo' ),
-                    				'desc'     => __( 'Logo of the website in Blog page', 'redux-framework-demo' )
+                    				'title'    => __( 'Blog Banner', 'redux-framework-demo' ),
+                    				'desc'     => __( 'Banner image in the Blog page', 'redux-framework-demo' )
                     		),
                     		array(
                     				'id'       => 'membership-background',

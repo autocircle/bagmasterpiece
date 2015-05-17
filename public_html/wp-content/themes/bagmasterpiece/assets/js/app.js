@@ -499,13 +499,15 @@
 		$scope.getTotal = function(){
 			var d = $scope.breakDown.fee;
 			var amount = 0;
-
+			
 			for( var i in d){
+
 				if( d.hasOwnProperty(i) ){
-					if( d.id )
-					amount += d.value;
+					if( d[i].id )
+					amount += parseInt(d[i].value);
 				}
 			}
+			return amount;
 		};
 		
 		$scope.init = function(){
@@ -515,7 +517,6 @@
 				url: admin_ajax + '?action=get_conditions'				
 	        })
 			.success(function(data) {
-				console.log(data);
 				$scope.param.data = data;
 			});
 		};
@@ -572,7 +573,7 @@
 			});
 		};
 
-		//$scope.init();
+		$scope.init();
 		$scope.flush();
 
 

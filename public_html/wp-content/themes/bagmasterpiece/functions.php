@@ -195,7 +195,8 @@ function add_login_out_item_to_menu( $items, $args ){
 		return $items_wrap;
 	}
 
-	return $items.= '<li id="log-in-out-link" class="menu-item menu-type-link">'. $link . '</li>';
+	//return $items.= '<li id="log-in-out-link" class="menu-item menu-type-link">'. $link . '</li>';
+	return $items;
 }
 
 add_filter( 'wp_nav_menu_items', 'add_login_out_item_to_menu', 50, 2 );
@@ -378,9 +379,15 @@ function BMP_social_share_og_meta(){
 	<meta property="og:title" content="<?php echo $data['title'];?>" />
 	<meta property="og:type" content="<?php echo $data['type'];?>" />
 	<meta property="og:url" content="<?php echo $data['url'];?>" />
+	<?php if(isset($data['image'][0])):?>
 	<meta property="og:image" content="<?php echo $data['image'][0];?>" />
+	<?php else:?>
+	<meta property="og:image" content="<?php echo $data['image']['url'];?>" />
+	<?php endif;?>
 	<meta property="og:locale" content="en_US" />
+	<?php if( isset($data['description']) ):?>
 	<meta property="og:description" content="<?php echo $data['description'];?>" />
+	<?php endif;?>
 	<meta name="twitter:site:id" content="63359297" />
 	<meta name="twitter:card" content="summary" />
 
@@ -414,6 +421,8 @@ add_action('woocommerce_custom_before_shop_loop','BMP_custom_product_cat');
 add_action('woocommerce_custom_before_shop_loop','BMP_custom_product_filter');
 
 function BMP_custom_product_cat(){
+
+    global $post;
 
 	$cat_count = array();
 
@@ -453,6 +462,9 @@ function BMP_custom_product_filter(){
 	$brands = get_terms('product_brand', array('hide_empty' => false, 'orderby' => 'id' ));
 	$styles = get_terms('product_style', array('hide_empty' => false, 'orderby' => 'id' ));
 
+	$r_b = isset($_REQUEST['brand']) ? esc_attr($_REQUEST['brand']): '';
+	$r_s = isset($_REQUEST['style']) ? esc_attr($_REQUEST['style']): '';
+
 	?>
 
 	<div class="shop-filter">
@@ -464,7 +476,7 @@ function BMP_custom_product_filter(){
 						<select name="brand">
 							<option value="-1">Choose Brand</option>
 							<?php foreach( $brands as $brand ):?>
-							<option value="<?php echo $brand->slug?>" <?php selected(esc_attr($_REQUEST['brand']), $brand->slug)?>><?php echo $brand->name?></option>
+							<option value="<?php echo $brand->slug?>" <?php selected($r_b, $brand->slug)?>><?php echo $brand->name?></option>
 							<?php endforeach;?>
 						</select>
 						<span></span>
@@ -475,7 +487,7 @@ function BMP_custom_product_filter(){
 						<select name="style">
 							<option value="-1">Select a Style</option>
 							<?php foreach( $styles as $style ):?>
-							<option value="<?php echo $style->slug?>" <?php selected(esc_attr($_REQUEST['style']), $style->slug)?>><?php echo $style->name?></option>
+							<option value="<?php echo $style->slug?>" <?php selected($r_s, $style->slug)?>><?php echo $style->name?></option>
 							<?php endforeach;?>
 						</select>
 						<span></span>
@@ -498,7 +510,7 @@ function filter_brand_styles($query){
 
 	if ( !is_admin() && $query->is_main_query() ) {
 
-		if( (is_shop() or is_product_category()) and isset( $_REQUEST['sfilter'] )){
+	    if( (( $query->is_post_type_archive( 'product' ) || get_queried_object_id() == wc_get_page_id( 'shop' ) ) or $query->is_tax( 'product_cat')) and isset( $_REQUEST['sfilter'] )){
 
 			$tax = $query->get('tax_query');
 
@@ -584,10 +596,31 @@ function make_offer_modal_box(){
 
 
 
+add_filter('manage_offer_post_posts_columns', 'manage_offer_posts_columns' );
 add_filter('manage_concierge_post_posts_columns', 'manage_concierge_posts_columns' );
 add_filter('manage_consignment_post_posts_columns', 'manage_consignment_posts_columns' );
+add_action('manage_offer_post_posts_custom_column', 'manage_offer_posts_custom_column', 10, 2);
 add_action('manage_concierge_post_posts_custom_column', 'manage_concierge_posts_custom_column', 10, 2);
 add_action('manage_consignment_post_posts_custom_column', 'manage_consignment_posts_custom_column', 10, 2);
+
+function manage_offer_posts_columns($columns){
+	unset($columns['title']);
+
+	$columns['c_date'] = 'Date';
+	$columns['concierge_by'] = 'Concierge By';
+	$columns['offer_by'] = 'Offer By';
+	$columns['concierge_budget'] = 'Concierge Budget';
+	$columns['offer_budget'] = 'Offer Budget';
+	$columns['counter_offer_budget'] = 'Counter Offer Budget';
+	$columns['offer_status'] = 'Offer Status';
+	$columns['concierge'] = '';
+	$columns['view'] = '';
+
+	unset($columns['date']);
+	unset($columns['title']);
+
+	return $columns;
+}
 
 function manage_concierge_posts_columns($columns){
 	unset($columns['title']);
@@ -601,6 +634,7 @@ function manage_concierge_posts_columns($columns){
 	$columns['hardware'] = 'Hardware';
 	$columns['budget'] = 'Budget';
 	$columns['offer'] = 'Offer';
+	$columns['user'] = 'User';
 	$columns['edit'] = '';
 
 	unset($columns['date']);
@@ -627,6 +661,100 @@ function manage_consignment_posts_columns($columns){
 	return $columns;
 }
 
+function manage_offer_posts_custom_column($column_name, $post_id){
+    switch($column_name){
+        case 'c_date':
+            echo get_the_date('Y-m-d',$post_id);
+            break;
+        case 'concierge':
+            $concierge = get_edit_post_link( get_post_meta($post_id, 'concierge_id', true) );
+            echo '<a target="_blank" href="' .$concierge. '" class="button-secondary">View Concierge</a>';
+            break;
+        case 'concierge_by':
+            $user_id = get_post_meta($post_id,'concierge_author', true);
+
+            if( !$user_id ){
+                echo '-';
+                break;
+            }
+
+            $data = get_userdata($user_id);
+
+            if( $data ){
+                if( $data->first_name && $data->last_name ){
+                    echo  $data->first_name .' ' .$data->last_name;
+                }
+                else{
+                    echo $data->user_email;
+                }
+            }
+            else{
+                echo '<i>&lt;invalid user&gt;</i>';
+            }
+            break;
+        case 'offer_by':
+            $user_id = get_post_meta($post_id,'offer_user', true);
+
+            if( !$user_id ){
+                echo '-';
+                break;
+            }
+
+            $data = get_userdata($user_id);
+
+            if( $data ){
+                if( $data->first_name && $data->last_name ){
+                    echo  $data->first_name .' ' .$data->last_name;
+                }
+                else{
+                    echo $data->user_email;
+                }
+            }
+            else{
+                echo '<i>&lt;invalid user&gt;</i>';
+            }
+            break;
+        case 'offer_status':
+            if( bmp_is_offer_status($post_id, 'declined') ):?>
+			<span><i>Passed</i></span>
+			<?php elseif( bmp_is_offer_status($post_id, 'accepted') ):?>
+			<span><i>Accepted</i></span>
+			<?php elseif( bmp_is_offer_status($post_id, 'completed') ):?>
+		    <span><i>Completed</i></span>
+			<?php else:?>
+			<span><i>Active</i></span>
+			<?php endif;
+            break;
+        case 'concierge_budget':
+            $concierge_post_id = get_post_meta($post_id, 'concierge_id', true);
+            $amount = get_post_meta($concierge_post_id, 'concierge_budget', true);
+            echo wc_price($amount, array('decimals' => 0));
+            break;
+        case 'offer_budget':
+            $amount = get_post_meta($post_id, 'offer_budget', true);
+            $counter = get_post_meta($post_id, 'offer_reoffer_counter', true);
+            if( $counter ){
+                echo '<small><del>' . wc_price($amount, array('decimals' => 0)) . '</del></small>&nbsp;';
+                echo wc_price($counter, array('decimals' => 0));
+            }
+            else{
+                echo wc_price($amount, array('decimals' => 0));
+            }
+            break;
+        case 'counter_offer_budget':
+            $amount = get_post_meta($post_id, 'offer_reoffer', true);
+            if($amount){
+            echo wc_price($amount, array('decimals' => 0));
+            }
+            break;
+        case 'view':
+            global $bagmasterpiece;
+            $concierge_page_id = $bagmasterpiece['concierge-page-id'];
+            $view_offer = add_query_arg(array('view'=>'offer','offer_id'=>$post_id),get_permalink($concierge_page_id));
+            echo '<a target="_blank" href="' .$view_offer. '" class="button-secondary">View Offer</a>';
+            break;
+    }
+}
 function manage_concierge_posts_custom_column($column_name, $post_id){
 
 	switch($column_name){
@@ -634,20 +762,44 @@ function manage_concierge_posts_custom_column($column_name, $post_id){
 			echo get_the_date('Y-m-d',$post_id);
 			break;
 		case 'item' :
-			$item = get_term_by('id',get_post_meta($post_id,'concierge_item', true),'concierge');
+		    $item_id = get_post_meta($post_id,'concierge_item', true);
+			$item = get_term_by('id', $item_id,'concierge');
+
 			echo $item->name;
 			break;
 		case 'brand' :
-			$brand = get_term_by('id',get_post_meta($post_id,'concierge_brand', true),'concierge');
-			echo $brand->name;
+		    $data = get_post_meta($post_id,'concierge_brand', true);
+			$term = get_term_by('id', $data,'concierge');
+
+			if( $term ){
+			    echo $term->name;
+			}
+			else{
+			    echo $data;
+			}
 			break;
 		case 'style' :
-			$style = get_term_by('id',get_post_meta($post_id,'concierge_style', true),'concierge');
-			echo $style->name;
+		    $data = get_post_meta($post_id,'concierge_style', true);
+	        $term = get_term_by('id', $data,'concierge');
+
+			if( $term ){
+			    echo $term->name;
+			}
+			else{
+			    echo $data;
+			}
 			break;
 		case 'model' :
-			$style = get_term_by('id',get_post_meta($post_id,'concierge_model', true),'concierge');
-			echo $style->model;
+			$data = get_post_meta($post_id,'concierge_model', true);
+			$term = get_term_by('id', $data,'concierge');
+
+			if( $term ){
+			    echo $term->name;
+			}
+			else{
+			    echo $data;
+			}
+
 			break;
 		case 'color' :
 			echo get_post_meta($post_id,'concierge_color1', true) . ', ';
@@ -666,8 +818,30 @@ function manage_concierge_posts_custom_column($column_name, $post_id){
 			break;
 		case 'offer' :
 			$offer = (array) get_post_meta($post_id,'offer', true);
-			echo count($offer) - 1;
+			echo count($offer);
 			break;
+	    case 'user' :
+	        $user_id = get_post_meta($post_id,'concierge_user', true);
+
+	        if( !$user_id ){
+                echo '-';
+	            break;
+	        }
+
+	        $data = get_userdata($user_id);
+
+	        if( $data ){
+	            if( $data->first_name && $data->last_name ){
+	                echo  $data->first_name .' ' .$data->last_name;
+	            }
+	            else{
+	                echo $data->user_email;
+	            }
+	        }
+	        else{
+	            echo '<i>&lt;invalid user&gt;</i>';
+	        }
+	        break;
 		case 'edit' :
 			echo '<a href="' .get_edit_post_link($post_id) .'" class="btn">Edit</a>';
 			break;
@@ -680,20 +854,46 @@ function manage_consignment_posts_custom_column($column_name, $post_id){
 			echo get_the_date('Y-m-d',$post_id);
 			break;
 		case 'item' :
-			$item = get_term_by('id',get_post_meta($post_id,'consignment_item', true),'concierge');
+		    $item_id =  get_post_meta($post_id,'consignment_item', true);
+			$item = get_term_by('id', $item_id, 'concierge');
 			echo $item->name;
 			break;
 		case 'brand' :
-			$brand = get_term_by('id',get_post_meta($post_id,'consignment_brand', true),'concierge');
-			echo $brand->name;
+		    $data = get_post_meta($post_id,'consignment_brand', true);
+		    $term = get_term_by('id', $data,'concierge');
+
+		    if( $term ){
+		        echo $term->name;
+		    }
+		    else{
+		        echo $data;
+		    }
 			break;
 		case 'style' :
-			$style = get_term_by('id',get_post_meta($post_id,'consignment_style', true),'concierge');
-			echo $style->name;
+			$data = get_post_meta($post_id,'consignment_style', true);
+
+			$term = get_term_by('id', $data,'concierge');
+
+			if( $term ){
+			    echo $term->name;
+			}
+			else{
+			    echo $data;
+			}
+
 			break;
 		case 'model' :
-			$model = get_term_by('id',get_post_meta($post_id,'consignment_model', true),'concierge');
-			echo $model->name;
+			$data = get_post_meta($post_id,'consignment_model', true);
+
+			$term = get_term_by('id', $data,'concierge');
+
+			if( $term ){
+			    echo $term->name;
+			}
+			else{
+			    echo $data;
+			}
+
 			break;
 		case 'other' :
 			$raw = get_post_meta($post_id,'consignment_params', true);
@@ -726,7 +926,12 @@ function manage_consignment_posts_custom_column($column_name, $post_id){
 			$data = get_userdata($user_id);
 
 			if( $data ){
-			    echo $data->first_name .' ' .$data->last_name;
+			    if( $data->first_name && $data->last_name ){
+			        echo  $data->first_name .' ' .$data->last_name;
+			    }
+			    else{
+			        echo $data->user_email;
+			    }
 			}
 			else{
 			    echo '<i>&lt;invalid consigner&gt;</i>';
@@ -1003,7 +1208,8 @@ function BMP_save_concierge(){
 		"{$type}_model" 				=> $product_info['model'] == '9999' ? $product_info['modelCustom'] : $product_info['model'],
 		"{$type}_budget" 				=> get_converted_currency($product_info['budget'], true),
 		"{$type}_params" 				=> $obj['formParam'],
-		"{$type}_other_details" 		=> $product_info['otherNote']
+		"{$type}_other_details" 		=> $product_info['otherNote'],
+		"{$type}_user" 		=> get_current_user_id()
 	);
 
 	foreach( $params as $param ){
@@ -1440,16 +1646,20 @@ function publish_as_product($referer){
 		return;
 	}
 
+	$consignment = new Consignment_Data($referer);
+
 	$post_id = get_post_meta( $referer ,'_product_id', true );
 
 	if( $post_id == '' ){
 
 		$user_id = get_current_user_id();
 
+		$_title = $consignment->get('item') . ' ' . $consignment->get('brand') . ' ' . $consignment->get('style');
+
 		$post = array(
 			'post_author' => $user_id,
 			'post_status' => "publish",
-			'post_title' => 'New Product',
+			'post_title' => $_title,
 			'post_type' => "product",
 		);
 
@@ -1460,7 +1670,7 @@ function publish_as_product($referer){
 
 	if($post_id){
 
-		$consignment = new Consignment_Data($referer);
+
 
 		update_post_meta( $post_id, '_thumbnail_id', $consignment->get('thumbnail') );
 
@@ -1957,6 +2167,11 @@ function bmp_offer_action(){
 			    $reoffer = get_post_meta($offer_id, 'offer_reoffer', true);
 			    $counter = get_post_meta($offer_id, 'offer_reoffer_counter', true);
 
+			    $concierge_id = get_post_meta($offer_id, 'concierge_id', true);
+			    $concierge_post = get_post($concierge_id);
+
+			    update_post_meta( $offer_id, 'concierge_author', $concierge_post->post_author);
+
 			    if( $reoffer && $self_requested){
 			        commisize_budget($reoffer, $offer_id);
 			        update_post_meta( $offer_id, 'offer_budget', $reoffer);
@@ -2212,6 +2427,8 @@ function BMP_human_time_diff( $from, $to = '' ) {
 		$to = time();
 	}
 
+	$date_since = '';
+
 	$date_diff = array(
 			'min' => 0,
 			'hour' => 0,
@@ -2442,9 +2659,9 @@ function restrict_email_verification(){
 
 	$haystack = array_values($bagmasterpiece['restricted-pages']);
 
-	if( !in_array($needle, $haystack) ){
-		//return;
-	}
+// 	if( !in_array($needle, $haystack) ){
+// 		//return;
+// 	}
 
     if( !user_verified_by_email() ){
 
@@ -2637,6 +2854,7 @@ function welcome_moderate_user($user_id, $pass){
 
         wp_set_current_user($user_signon->ID);
         update_user_meta($user_signon->ID, '__just_registered', '__YES__');
+        update_user_meta($user_signon->ID, 'currency', get_woocommerce_currency());
 
         $id = wc_get_page_id('shop');
 

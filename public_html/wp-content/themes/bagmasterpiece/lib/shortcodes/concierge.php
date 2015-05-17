@@ -47,7 +47,7 @@ function concierge_form_cb($atts, $content = ""){
 				</div>
 			</div>
 
-			<?php $post_id = esc_attr($_GET['offer_id']);?>
+			<?php $post_id = isset($_GET['offer_id']) ? esc_attr($_GET['offer_id']) : 0;?>
 
 			<div class="row">
 
@@ -70,15 +70,24 @@ function concierge_form_cb($atts, $content = ""){
 
 
 					<?php
+
+					   // @todo how could I get the offers only to me!!!
+
 						$args = array(
 									'post_type' => 'offer_post',
 									'post_per_page' => -1,
 									'meta_query' => array(
+									       'relation' => 'AND',
 											array(
 													'key' => '_offer_status',
 													'value' => array('accepted', 'completed'),
 													'comapre' => 'IN'
-													)
+												),
+											array(
+													'key' => 'concierge_author',
+													'value' => get_current_user_id(),
+													'comapre' => '='
+												)
 										)
 								);
 
@@ -147,8 +156,10 @@ function concierge_form_cb($atts, $content = ""){
 														'view' => 'accepted',
 														'action' => 'complete',
 														'offer_id'=> get_the_ID(),
-														'return_url' => add_query_arg(array('view'=>'offer','offer_id'=>$offer),get_permalink(get_queried_object_id()))
+														'return_url' => add_query_arg(array('view'=>'offer','offer_id'=>get_the_ID()),get_permalink(get_queried_object_id()))
 												);
+
+												$base_url = get_permalink( get_queried_object_id() );
 
 												$complete_offer = wp_nonce_url(add_query_arg( $arg, $base_url ), 'really-complete-the-offer');
 
@@ -166,6 +177,9 @@ function concierge_form_cb($atts, $content = ""){
 								<?php
 							}
 						}
+						else{
+						    echo '<tr><td colspan="5">No offer is accepted yet.</td></tr>';
+						}
 					?>
 						</tbody>
 					</table>
@@ -181,7 +195,7 @@ function concierge_form_cb($atts, $content = ""){
 
 	elseif( empty( $_GET ) or ( isset( $_GET['view'] ) and (esc_attr($_GET['view']) == 'request_all' or (esc_attr($_GET['view']) == 'offer' and !isset( $_GET['offer_id'] ) )) ) ):
 
-	$type = ( esc_attr($_GET['view']) == 'request_all' and current_user_can('Special') ) ? 1 : 0;
+	$type = ( isset($_GET['view']) and esc_attr($_GET['view']) == 'request_all' and current_user_can('Special') ) ? 1 : 0;
 
 	$arg = array(
 			'post_type' => 'concierge_post'
@@ -320,7 +334,7 @@ function concierge_form_cb($atts, $content = ""){
 									      	<div class="details_content">
 									      		<p>
 													<label for="title">Date</label>
-													<span class="value"><?php echo get_the_date('Y-m-d',$post_id);?></span>
+													<span class="value"><?php echo get_the_date('Y-m-d',get_the_ID());?></span>
 												</p>
 										      	<p>
 													<label for="title">Item</label>
@@ -555,7 +569,7 @@ function concierge_form_cb($atts, $content = ""){
 												      				<a target="_blank" href="<?php echo $view_offer;?>" class="btn btn-default"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> View</a>
 												      				<?php endif;?>
 
-												      				<?php if( !$reoffer ):?>
+												      				<?php if( !$reoffer && !bmp_is_offer_status($offer, 'accepted') ):?>
 
 												      				<button class="btn btn-default" data-toggle="modal" data-target="#reofferModal<?php the_ID();?>">Make an offer</button>
 
