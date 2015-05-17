@@ -1,6 +1,6 @@
 <div class="col-md-12 spacing-style section-one border-style">
 	<div class="section-heading">
-		<h4><?php the_title()?></h4>
+            <h4><a href="<?php the_permalink(); ?>"><?php the_title()?></a></h4>
 		<time><?php the_time('F j, Y');?></time>
 	</div>
 	
