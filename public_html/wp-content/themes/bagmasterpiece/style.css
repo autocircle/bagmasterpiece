@@ -378,15 +378,35 @@ section#flashsalepage ul li a {
 }
 .blog-logo-block{
 	text-align: center;
-	margin-top: -350px;
+	margin-top: -285px;
+}
+img.blog-logo {
+    width: 75%;
+    height: auto;
+}
+.blog-submenu {
+  width: 600px;
+  margin: 20px auto;
+  position: relative;
+  z-index: 9999
 }
 .blog-submenu ul{
 	list-style: none;
 	padding: 0;
-	margin: 0 auto 175px;
+	border: 1px solid #fff;
+	border-width: 1px 0;
+	margin: 0 auto 90px;
 }
 .blog-submenu ul li{
 	display: inline-block;
+}
+.blog-submenu ul li a {
+  color: #fff;
+  text-transform: uppercase;
+  font-size: 16px;
+  padding: 8px;
+  display: block;
+  text-shadow: 0 0 10px #000;
 }
 .membership-featured-boxes{
 	margin: 0 auto;
