@@ -27,6 +27,9 @@ body {
 .main-footer{
 	min-height: 20vh;
 }
+h1.entry-title, h3#reply-title {
+  color: #fff;
+}
 p {
 	color: #fff;
 }
@@ -34,7 +37,7 @@ p {
 	color: #333;
 }
 .nav-wrap{
-	width:1180px;
+	width:100%;
 	margin: 0 auto;
 }
 #bs-example-navbar-collapse-1{
@@ -42,7 +45,8 @@ p {
 	width: 72%
 }
 .nav-wrap .social-fb{
-	line-height: 37px;
+    line-height: 18px;
+    margin-bottom: 5px;
 }
 img.alignright { float: right; margin: 0 0 1em 1em; }
 img.alignleft { float: left; margin: 0 1em 1em 0; }
@@ -153,8 +157,9 @@ footer.main-footer {
     padding-bottom: 10px;
 }
 img.footer-logo {
-    float: right;
-    margin-right: 10px;
+    float: none;
+    margin: 10px auto;
+    display: block;
 }
 footer p.copyright-text {
     padding-left: 15px;
@@ -167,11 +172,11 @@ footer p {
 }
 footer ul{
     list-style: none;
-    margin: 20px 0 -20px;
+    margin: 0 auto;
     padding: 0;
     width: 281px;
-    display: inline-block;
-    float: right;
+    display: block;
+    float: none;
 }
 footer ul li {
     display: inline-block;
@@ -523,24 +528,26 @@ section#flashsalepage ul li a {
 }
 .home-logo img{
 	display: block;
-	margin: 0 auto; height: 80px;
+	margin: 0 auto;
+        height: auto;
+        width: 100%;
 }
 .home-featured-boxes{
 	position:relative;
 	margin-top:40px;
 }
 .home-featured-boxes .widget:first-child{
-	margin-left: 33.3333%;
-	margin-right: 33.3333%;
-	margin-bottom: 0px;
-	width:33.3333%;
+        margin-left: 0;
+        margin-right: 0;
+        margin-bottom: 0px;
+        width: 100%;
 }
 .home-featured-boxes .widget:nth-child(2){
-	margin-left: 16%;
-	margin-right: 1.3334%;
+	margin-left: 0;
+	margin-right: 0;
 }
 .home-featured-boxes .widget{
-	width:33.3333%;
+	width:100%;
 	text-align: center;
 	float:left;
 }
@@ -557,137 +564,133 @@ section#flashsalepage ul li a {
 	outline: none;
 }
 .shop-main, .page-main{
-	width:950px;
-	margin: 0 auto;
-	margin-top: 40px;
+    width: 100%;
+    margin: 0 auto;
+    margin-top: 20px;
 }
 .shop-header-terms{
-	color:#fff;
-	font-size: 18px;
-	padding: 15px 125px;
-	background: #105a43;
-	text-align: center;
+    color:#fff;
+    font-size: 18px;
+    padding: 15px 125px;
+    background: #105a43;
+    text-align: center;
 }
 .shop-header-terms a{
-	font-size: 18px;
-	color:#fff;
-	letter-spacing: 6px;
-	margin:0 10px;
-	padding:0 10px;
-	font-weight: bold;
+    font-size: 18px;
+    color:#fff;
+    letter-spacing: 6px;
+    margin:0 10px;
+    padding:0 10px;
+    font-weight: bold;
 }
-/*.shop-header-terms a:hover{
-	background: #127657;
+.page-main h1 {
+    font-size: 26px;
 }
-.shop-header-terms a:focus, .shop-header-terms a:active{
-	background: #083b2b;
-}*/
 .page-header-image{
-	min-height: 237px;
-	width:100%;
-	margin-top: -20px;
-	position: relative;
-	background: #000;
-	box-shadow: 0 5px 20px 0 #000;
+    min-height: 0;
+    width:100%;
+    margin-top: -20px;
+    position: relative;
+    background: #000;
+    box-shadow: 0 5px 20px 0 #000;
 }
 .page-header-image img{
-	width: 100%;
-	height: auto;
+    width: 100%;
+    height: auto;
 }
 .page-header-image h1{
-	position: absolute;
-	color: rgb(255, 255, 255);
-	font-size: 80px;
-	top: 28%;
-	margin: 0px;
-	text-align: center;
-	width: 100%;
-	z-index: 1000;
-	line-height: 80px;
-	font-variant: small-caps;
+    position: absolute;
+    color: rgb(255, 255, 255);
+    font-size: 40px;
+    top: 0%;
+    margin: 0px;
+    text-align: center;
+    width: 100%;
+    z-index: 1000;
+    line-height: 50px;
+    font-variant: small-caps;
 }
 .woocommerce .shop-main .products .first.product{
-	margin-left: 0;
+    margin-left: 0;
 }
 .woocommerce .shop-main .products .last.product{
-	margin-right: 0;
+    margin-right: 0;
 }
 .woocommerce .shop-main .products .product{
-	margin-left: 1.3333333333333333%;
-	margin-right: 1.3333333333333333%;
-	width: 23%;
-	opacity:0.5;
-	-o-transition:all 0.2s ease-in;
-	-ms-transition:all 0.2s ease-in;
-	-moz-transition:all 0.2s ease-in;
-	-webkit-transition:all 0.2s ease-in;
-	transition:all 0.2s ease-in;
+    margin-left: 1.3333333333333333%;
+    margin-right: 1.3333333333333333%;
+    width: 23%;
+    opacity:0.5;
+    -o-transition:all 0.2s ease-in;
+    -ms-transition:all 0.2s ease-in;
+    -moz-transition:all 0.2s ease-in;
+    -webkit-transition:all 0.2s ease-in;
+    transition:all 0.2s ease-in;
 }
 .woocommerce .shop-main .products .product:hover{
 	opacity:1;
 }
 .product-loop{
-	height: 350px;
-	background: #000;
-	width: 100%;
-	display: block;
-	text-align: center;
-	color: #f5f5f5;
+    height: 350px;
+    background: #000;
+    width: 100%;
+    display: block;
+    text-align: center;
+    color: #f5f5f5;
 }
 .product-loop h3 a{
-	font-size: 14px;
-	text-transform: uppercase;
-	display: block;
-	text-align: center;
-	color: #f5f5f5;
+    font-size: 14px;
+    text-transform: uppercase;
+    display: block;
+    text-align: center;
+    color: #f5f5f5;
 }
 .social-wrap span{
-	display: inline-block;
-	text-indent: -9999px;
-	width: 27px;
-	height: 31px;
-	background: #000 url(images/social-share-loop.png) no-repeat;
-	cursor:pointer;
+    display: inline-block;
+    text-indent: -9999px;
+    width: 27px;
+    height: 31px;
+    background: #000 url(images/social-share-loop.png) no-repeat;
+    cursor:pointer;
 }
 .social-wrap span.fb{
-	background-position: 0px 0px;
+    background-position: 0px 0px;
 }
 .social-wrap span.twitter{
-	background-position: -34px 0px;
+    background-position: -34px 0px;
 }
 .social-wrap span.gplus{
-	background-position: -68px 0px;
+    background-position: -68px 0px;
 }
 .social-wrap span.pinterest{
-	background-position: -98px 0px;
+    background-position: -98px 0px;
 }
 .social-wrap span.instagram{
-	background-position: -130px 0px;
+    background-position: -130px 0px;
 }
 .shop-header-terms a.current-product-cat{
-	color: #fbad02;
+    color: #fbad02;
 }
 .single-product .shop-main .product, .offer-main .product{
-	background: rgb(0, 0, 0) none repeat scroll 0% 0%;
-	_color: rgb(255, 255, 255);
-	
-	padding: 0px 20px 20px;
-	margin-top: 0px;
+    background: rgb(0, 0, 0) none repeat scroll 0% 0%;
+    _color: rgb(255, 255, 255);
+    padding: 0px 20px 20px;
+    margin-top: 0px;
     margin-bottom: 30px;
     border-bottom-left-radius: 20px;
-	border-bottom-right-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 .offer-main .product{
 }
 .single-product .shop-main .product .brand-block h3,
 .offer-main .product .brand-block h3{
-	display: block;
-	text-align: center;
-	font-size: 24px;
-	text-transform: uppercase;
-	color: #b3ae53;
-	margin-top:30px;
-	margin-bottom:20px;
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    text-transform: uppercase;
+    color: #b3ae53;
+    margin-top:30px;
+    margin-bottom:20px;
 }
 .single-product .shop-main .product .title-block,
 .single-product .shop-main .product .description-block,
@@ -2291,4 +2294,86 @@ input.invalid{
   border-radius: 5px;
   padding: 0 20px;
   color: #FDFDFD;
-} 
+}
+.copyright-text {
+  text-align: center;
+  margin-top: 20px;
+}
+@media (min-width: 768px){
+    .home-featured-boxes .widget:nth-child(2) {
+        margin-left: 16%;
+        margin-right: 1.3334%;
+    }
+    .home-featured-boxes .widget {
+        width: 33.3333%;
+        text-align: center;
+        float: left;
+    }
+    img.footer-logo {
+        float: right;
+        margin-right: 10px;
+    }
+    footer ul {
+        list-style: none;
+        margin: 20px 0 -20px;
+        padding: 0;
+        width: 281px;
+        display: inline-block;
+        float: right;
+    }
+    .shop-main, .page-main {
+        width: 950px;
+        margin: 0 auto;
+        margin-top: 40px;
+    }
+    .page-header-image {
+        min-height: 237px;
+    }
+}
+@media (min-width: 800px){
+    .nav-wrap{
+	width:1180px;
+    }
+    .home-featured-boxes .widget:first-child {
+        margin-left: 33.3333%;
+        margin-right: 33.3333%;
+        margin-bottom: 0px;
+        width: 33.3333%;
+    }
+    .copyright-text {
+        text-align: left;
+        margin-top: 0px;
+    }
+    .home-logo img {
+        display: block;
+        margin: 0 auto;
+        height: 80px;
+        width: auto;
+    }
+    footer ul {
+        list-style: none;
+        margin: 0px 0 -20px;
+        padding: 0;
+        width: 281px;
+        display: inline-block;
+        float: right;
+    }
+    .nav-wrap .social-fb {
+        line-height: 37px;
+    }
+    .page-header-image h1 {
+        position: absolute;
+        color: rgb(255, 255, 255);
+        font-size: 80px;
+        top: 28%;
+        margin: 0px;
+        text-align: center;
+        width: 100%;
+        z-index: 1000;
+        line-height: 80px;
+        font-variant: small-caps;
+    }
+    .page-main h1 {
+        font-size: 36px;
+    }
+}
