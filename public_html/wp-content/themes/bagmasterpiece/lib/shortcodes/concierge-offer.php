@@ -1,5 +1,7 @@
 <?php
 
+$decimals = 6;
+
 $assets_path = str_replace( array( 'http:', 'https:' ), '', WC()->plugin_url() ) . '/assets/';
 wp_enqueue_script( 'prettyPhoto', $assets_path . 'js/prettyPhoto/jquery.prettyPhoto.min.js', array( 'jquery' ), '3.1.5', true );
 wp_enqueue_script( 'prettyPhoto-init', $assets_path . 'js/prettyPhoto/jquery.prettyPhoto.init.min.js', array( 'jquery','prettyPhoto' ) );
@@ -234,7 +236,7 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 													    $amount = commisize_budget($amount, $post_id);
 													}
 
-													echo wc_price($amount, array('decimals' => 0));
+													echo wc_price($amount, array('decimals' => $decimals));
 												?>
 											</div>
 
@@ -266,14 +268,14 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 											<?php if( $reoffer ):?>
 											<?php commisize_budget($reoffer, $post_id);?>
 											<div class="reoffer">
-											     <p class="text-center"><strong>Your Offer:</strong>&nbsp;<span><?php echo wc_price($reoffer, array('decimals' => 0));?></span></p>
+											     <p class="text-center"><strong>Your Offer:</strong>&nbsp;<span><?php echo wc_price($reoffer, array('decimals' => $decimals));?></span></p>
 											</div>
 											<?php endif;?>
 
 											<?php if( $counter ):?>
 											<?php commisize_budget($counter, $post_id);?>
                                             <div class="reoffer">
-											     <p class="text-center"><strong>Offerd:</strong>&nbsp;<span><?php echo wc_price($counter, array('decimals' => 0));?></span></p>
+											     <p class="text-center"><strong>Offerd:</strong>&nbsp;<span><?php echo wc_price($counter, array('decimals' => $decimals));?></span></p>
 											</div>
 											<?php endif;?>
 
@@ -379,12 +381,12 @@ wp_enqueue_style( 'woocommerce_prettyPhoto_css', $assets_path . 'css/prettyPhoto
 												<?php if( $reoffer ):?>
 												    <?php commisize_budget($reoffer, $post_id);?>
     												<div class="reoffer">
-    												     <p class="text-center"><strong>Offered:</strong>&nbsp;<span><?php echo wc_price($reoffer, array('decimals' => 0));?></span></p>
+    												     <p class="text-center"><strong>Offered:</strong>&nbsp;<span><?php echo wc_price($reoffer, array('decimals' => $decimals));?></span></p>
     												</div>
                                                     <?php if( $counter ):?>
                                                     <?php commisize_budget($counter, $post_id);?>
                                                     <div class="reoffer">
-    												     <p class="text-center"><strong>Your Offer:</strong>&nbsp;<span><?php echo wc_price($counter, array('decimals' => 0));?></span></p>
+    												     <p class="text-center"><strong>Your Offer:</strong>&nbsp;<span><?php echo wc_price($counter, array('decimals' => $decimals));?></span></p>
     												</div>
                                                     <?php else:?>
     												<div class="action-buttons">

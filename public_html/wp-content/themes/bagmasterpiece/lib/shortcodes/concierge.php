@@ -1,7 +1,7 @@
 <?php
 function concierge_form_cb($atts, $content = ""){
 
-
+    $decimals = 6;
 
 	if( isset( $_GET['view'] ) and esc_attr($_GET['view']) == 'offer' && isset( $_GET['offer_id'] ) and get_post_type( esc_attr($_GET['offer_id']) ) == 'offer_post'):
 
@@ -25,13 +25,17 @@ function concierge_form_cb($atts, $content = ""){
 					<h1>Accepted Offers</h1>
 				</div>
 
+				<?php dashboard_tabs();?>
+
 				<div class="col-md-12">
 					<div class="btn-group-container clearfix">
-						<div class="pull-right">
+					   <div class="pull-left">
+    					   <a class="btn btn-default btn-back-to-list" href="<?php echo get_permalink(get_queried_object_id()); ?>">
+    							<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+    							Back to list</a>
+					   </div>
 
-							<a class="btn btn-default btn-back-to-list" href="<?php echo get_permalink(get_queried_object_id()); ?>">
-							<span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
-							Back to list</a>
+						<div class="pull-right">
 							<?php if( current_user_can('Special') ):?>
 							<a class="btn btn-default" style="margin-left:0px" href="<?php echo add_query_arg(array('view'=>'request_all'),get_permalink(get_queried_object_id()) ); ?>">
 							<span class="glyphicon glyphicon-share-alt" aria-hidden="true"></span>
@@ -106,7 +110,7 @@ function concierge_form_cb($atts, $content = ""){
 										<?php
 											$amount = get_post_meta(get_the_ID(),'offer_budget', true);
 											//commisize_budget($amount);
-											echo wc_price($amount, array('decimals' => 0));
+											echo wc_price($amount, array('decimals' => $decimals));
 										?>
 									</td>
 									<td>
@@ -198,7 +202,15 @@ function concierge_form_cb($atts, $content = ""){
 	$type = ( isset($_GET['view']) and esc_attr($_GET['view']) == 'request_all' and current_user_can('Special') ) ? 1 : 0;
 
 	$arg = array(
-			'post_type' => 'concierge_post'
+			'post_type' => 'concierge_post',
+//     	    'post_per_page' => -1,
+//     	    'meta_query' => array(
+//     	        array(
+//     	            'key' => '_concierge_status',
+//     	            'value' => 'accepted',
+//     	            'comapre' => 'NOT EXISTS'
+//     	        )
+//     	    )
 		);
 
 	if( !$type ){
@@ -409,7 +421,7 @@ function concierge_form_cb($atts, $content = ""){
 
 														commisize_budget($amount);
 
-														echo wc_price($amount, array('decimals' => 0));
+														echo wc_price($amount, array('decimals' => $decimals));
 
 														?>
 
@@ -447,6 +459,7 @@ function concierge_form_cb($atts, $content = ""){
 								<?php if( $type ):?>
 									<?php
 
+
 										if($self_requested){
 											echo '<i>Self requested</i>';
 											break;
@@ -475,9 +488,16 @@ function concierge_form_cb($atts, $content = ""){
 										<a href="<?php echo add_query_arg(array( 'new'=>'offer','concierge'=>get_the_ID() ),get_permalink(get_queried_object_id()) ); ?>" class="btn btn-info btn-submit">Submit</a>
 									<?php endif;?>
 
+								<?php
+								    elseif( get_post_meta(get_the_ID(), '_concierge_status', true) == 'accepted') :
+									   echo '<i>Accepted</i>';
+									   break;
+
+								?>
 								<?php else:?>
 
 									<?php $offers = get_post_meta(get_the_ID(),'offer',true);?>
+
 									<?php if( $offers !== false and !empty($offers) and count($offers) >0 ):?>
 
 									<button class="btn btn-default btn-offer btn-mini" data-toggle="modal" data-target="#offerModal<?php the_ID();?>">Offer <span class="badge"><?php echo BMP_count_active_offers($offers);?></span></button><span class="badge"> <?php echo BMP_count_active_offers($offers);?></span>
@@ -503,6 +523,10 @@ function concierge_form_cb($atts, $content = ""){
 												      		if( $offer == '' )
 												      			continue;
 
+												      		if( !is_offer_available($offer) ){
+												      		    echo '<tr><td colspan="3"><p class="text-center"><i>Offer not available</i></p></td></tr>';
+												      		    continue;
+												      		}
 
 
 												      		$view_offer = add_query_arg(array('view'=>'offer','offer_id'=>$offer),get_permalink(get_queried_object_id()));
@@ -538,10 +562,10 @@ function concierge_form_cb($atts, $content = ""){
 												      					if( $counter ){
 												      					    commisize_budget($counter, $offer);
 												      					    echo '<small><del>' . wc_price($amount, array('decimals' => 0)) . '</del></small>&nbsp;';
-												      					    echo wc_price($counter, array('decimals' => 0));
+												      					    echo wc_price($counter, array('decimals' => $decimals));
 												      					}
 												      					else{
-												      					    echo wc_price($amount, array('decimals' => 0));
+												      					    echo wc_price($amount, array('decimals' => $decimals));
 												      					}
 
 
@@ -550,7 +574,7 @@ function concierge_form_cb($atts, $content = ""){
 												      			<td>
 												      			   <?php
 												      			       if( $reoffer ){
-												      			           echo wc_price($reoffer, array('decimals' => 0));
+												      			           echo wc_price($reoffer, array('decimals' => $decimals));
 												      			       }
 
 												      			   ?>

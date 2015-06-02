@@ -316,9 +316,11 @@ ob_start();
 													<input type="text" name="concierge_{{D.data.slug}}" id="concierge_{{D.data.slug}}" value="" data-ng-model="param.formData.productInfo.otherData[D.data.slug]">
 												</li>
 
-												<li class="item">
+												<li class="item clearfix budget-item">
 													<label for="concierge_budget">Budget</label>
+													<span class="pull-right"><?php echo get_user_meta( get_current_user_id(), 'currency', true );?></span>
 													<input type="text" name="concierge_budget" ui-currency id="concierge_budget" value="" data-ng-model="param.formData.productInfo.budget">
+
 												</li>
 												<li class="item">
 													<label for="concierge_other_details">Other Details/ Requests</label>

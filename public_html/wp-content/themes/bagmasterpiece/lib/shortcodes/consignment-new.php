@@ -87,7 +87,7 @@ ob_start();
 
 			<div class="block-content" data-ng-controller="consignmentController">
 
-				<div class="step step-1" data-ng-show="step==1">
+				<div class="step step-1" data-ng-show="step==99">
 					<div class="intro-title">
 						<h2>Welcome to the Bagmasterpiece Consignment Service!</h2>
 					</div>
@@ -111,7 +111,13 @@ ob_start();
 
 				</div><!-- #step-1 -->
 
-				<div class="step step-2" data-ng-show="step==2">
+				<div class="step step-1" data-ng-show="step==1">
+
+				    <div class="intro-title">
+						<h2>Welcome to the Bagmasterpiece Consignment Service!</h2>
+					</div>
+
+
 					<div class="product-data">
 
 						<div class="consignment-form-element">
@@ -211,8 +217,9 @@ ob_start();
 
 												//-->
 
-												<li class="item">
+												<li class="item clearfix budget-item">
 													<label for="consignment_budget">Budget</label>
+													<span class="pull-right"><?php echo get_user_meta( get_current_user_id(), 'currency', true );?></span>
 													<input type="text" name="consignment_budget" ui-currency id="consignment_budget" value="" data-ng-model="param.formData.productInfo.budget">
 												</li>
 												<li class="item">
@@ -281,7 +288,7 @@ ob_start();
 					</div>
 				</div>	<!-- #step-2 -->
 
-				<div class="step step3" data-ng-show="step==3">
+				<div class="step step2" data-ng-show="step==2">
 					<div class="product-info-block image-uploader-block">
 						<h2>Upload your profile pictures here</h2>
 
@@ -604,6 +611,24 @@ ob_start();
 					</div> <!-- button group -->
 
 				</div>
+				<div class="step step-3" data-ng-show="step==3">
+					<div class="row">
+						<div class="col-md-6">
+							<div class="package-select" data-ng-click="selectPackage(1)">
+								<img data-ng-src="<?php echo get_template_directory_uri()?>/images/allinone-package.png">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="package-select" data-ng-click="selectPackage(2)">
+								<img data-ng-src="<?php echo get_template_directory_uri()?>/images/homekit.png">
+							</div>
+						</div>
+					</div>
+					<div class="span4 mid-button">
+						<button type="button" data-ng-show="step>1" data-ng-click="prev()" class="previous">Previous</button>
+					</div> <!-- button group -->
+
+				</div><!-- #step-1 -->
 				<div class="step step3" data-ng-show="step==4">
 					<div class="product-info-block breakdown">
 						<h2>Consignment Free Breakdown <span class="pull-right">{{breakDown.name}}</span></h2>
@@ -619,7 +644,10 @@ ob_start();
 										<tbody>
 											<tr data-ng-repeat="i in breakDown.fee">
 												<th>{{i.name}}</th>
-												<td>{{i.value}}</td>
+												<td>{{i.type=='percent' ? param.formData.productInfo.budget * i.value/100 : i.value}}</td>
+												<td>
+												    <label data-ng-repeat="m in i.options"><input type="radio" data-ng-model="param.formData.packageData.fee[$parent.$index].set" value="{{m.value}}"> {{m.name}}</label>
+												</td>
 											</tr>
 											<tr>
 												<th>Total</th>

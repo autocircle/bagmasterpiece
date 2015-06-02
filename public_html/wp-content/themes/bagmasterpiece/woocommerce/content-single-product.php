@@ -140,6 +140,8 @@ global $product;
     		  $loop 		= 0;
     		  $columns 	    = 4;
 
+    		  $images = array_unique($images);
+
 		  ?>
 
 			<div class="thumbnail-block">

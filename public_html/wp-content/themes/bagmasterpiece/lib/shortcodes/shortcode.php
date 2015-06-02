@@ -2,10 +2,12 @@
 
 require_once dirname(__FILE__) .'/concierge.php';
 require_once dirname(__FILE__) .'/consignment.php';
+require_once dirname(__FILE__) .'/boutique-offers.php';
 
 
 add_shortcode('concierge-form', 'concierge_form_cb');
 add_shortcode('consignment-form', 'BMP_get_consignment');
+add_shortcode('boutique-offer', 'BMP_get_boutique_offers');
 add_shortcode('sms-verification', 'BMP_sms_verify');
 
 function pre_process_shortcode() {
@@ -125,7 +127,7 @@ function sms_verification_steps(){
 
 	// live
 	$AccountSid = "AC73609d2123081f0ecb66987b6bd9bd12";
-	$AuthToken = "8add8ab81b1b754d28ff01718bb1187e";
+	$AuthToken = "544040f019620e1a98b6438f956677c1";
 
 	// Instantiate a new Twilio Rest Client
 	$client = new Services_Twilio($AccountSid, $AuthToken);

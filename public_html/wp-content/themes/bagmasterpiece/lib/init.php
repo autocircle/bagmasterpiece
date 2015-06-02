@@ -135,17 +135,31 @@ function create_concierge_posts() {
 
 	$args3 = array(
 			'public' => false,
-			'label'  => 'Offer',
+			'label'  => 'Concierge Offer',
 			'exclude_from_search'  => true,
 			'publicly_queryable'   => false,
 			'show_ui'              => true,
-			'show_in_menu'         => true,
+			'show_in_menu'         => 'edit.php?post_type=concierge_post',
 			'show_in_nav_menus'    => false,
 			'show_in_admin_bar'    => false,
 			'supports'             => array('offer'),
 			'rewrite'              => false
 	);
 	register_post_type( 'offer_post', $args3 );
+
+	$args4 = array(
+			'public' => false,
+			'label'  => 'Consignment Offer',
+			'exclude_from_search'  => true,
+			'publicly_queryable'   => false,
+			'show_ui'              => true,
+			'show_in_menu'         => 'edit.php?post_type=consignment_post',
+			'show_in_nav_menus'    => false,
+			'show_in_admin_bar'    => false,
+			'supports'             => array('offer'),
+			'rewrite'              => false
+	);
+	register_post_type( 'consignment_offer', $args4 );
 
 	//	taxonomy
 
@@ -224,7 +238,7 @@ function concierge_post_meta_box($post){
 
 function consignment_images_meta_box_callback($post){
 	wp_enqueue_style( 'woocommerce_admin_styles', WC()->plugin_url() . '/assets/css/admin.css', array(), WC_VERSION );
-	wp_enqueue_style( 'jquery-ui-style', '//ajax.googleapis.com/ajax/libs/jqueryui/' . $jquery_version . '/themes/smoothness/jquery-ui.css', array(), WC_VERSION );
+	wp_enqueue_style( 'jquery-ui-style', '//ajax.googleapis.com/ajax/libs/jqueryui/1.1.11/themes/smoothness/jquery-ui.css', array(), WC_VERSION );
 	wp_enqueue_media();
 	?>
 
@@ -607,7 +621,10 @@ function consignment_meta_box_callback($post){
 		"{$type}_auth_pics" 	=> '',
 		"{$type}_receipt_pic" 	=> '',
 		"{$type}_receipt" 	=> '',
-		"{$type}_package_id" 	=> ''
+		"{$type}_package_id" 	=> '',
+		"{$type}_package_data" 	=> '',
+		"{$type}_package_total" => '',
+		"{$type}_discount" => '',
 	);
 
 
@@ -688,33 +705,33 @@ function consignment_meta_box_callback($post){
 				</select>
 			</li>
 			<li class="item">
-				<label for="concierge_brand">Brand</label>
+				<label for="consignment_brand">Brand</label>
 				<?php if( $brand ):?>
-				<select name="concierge_brand" id="concierge_brand">
+				<select name="consignment_brand" id="consignment_brand">
 					<option value="<?php echo $brand->term_id?>"><?php echo $brand->name?></option>
 				</select>
 				<?php else:?>
-				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_brand"])?>">
+				<input type="text" name="consignment_brand" id="consignment_brand" value="<?php echo esc_attr($posted["{$type}_brand"])?>">
 				<?php endif;?>
 			</li>
 			<li class="item">
-				<label for="concierge_style">Style</label>
+				<label for="consignment_style">Style</label>
 				<?php if( $style ):?>
-				<select name="concierge_style" id="concierge_style">
+				<select name="consignment_style" id="consignment_style">
 					<option value="<?php echo $style->term_id?>"><?php echo $style->name?></option>
 				</select>
 				<?php else:?>
-				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_style"])?>">
+				<input type="text" name="consignment_style" id="consignment_style" value="<?php echo esc_attr($posted["{$type}_style"])?>">
 				<?php endif;?>
 			</li>
 			<li class="item">
-				<label for="concierge_model">Model</label>
+				<label for="consignment_model">Model</label>
 				<?php if( $model ):?>
-				<select name="concierge_model" id="concierge_model">
+				<select name="consignment_model" id="consignment_model">
 					<option value="<?php echo $model->term_id?>"><?php echo $model->name?></option>
 				</select>
 				<?php else:?>
-				<input type="text" name="concierge_brand" id="concierge_brand" value="<?php echo esc_attr($posted["{$type}_model"])?>">
+				<input type="text" name="consignment_model" id="consignment_model" value="<?php echo esc_attr($posted["{$type}_model"])?>">
 				<?php endif;?>
 			</li>
 
@@ -747,7 +764,7 @@ function consignment_meta_box_callback($post){
 			</li>
 			<li class="item">
 				<label for="consignment_included">Included</label>
-				<textarea name="consignment_included" id="consignment_included"><?php echo implode(', ',$posted["{$type}_included"])?></textarea>
+				<textarea name="consignment_included" id="consignment_included"><?php echo is_array($posted["{$type}_included"]) ? implode(', ',$posted["{$type}_included"]) : '';?></textarea>
 			</li>
 			<li class="item">
 				<label for="">Bank Account Name</label>
@@ -818,6 +835,38 @@ function consignment_meta_box_callback($post){
 				<label for="">Package ID</label>
 				<strong><?php echo esc_attr($posted["{$type}_package_id"]) == 2 ? 'Home Kit Package' : 'All-in Package'?></strong>
 			</li>
+			<li class="item">
+				<label for="">Package Data</label>
+                <?php $total = 0;?>
+				<?php foreach( $posted["{$type}_package_data"]['fee'] as $p ):?>
+				<p><strong><?php echo $p['name']?></strong> - <?php echo $p['value']?> <i>(<?php echo $p['set'] == '1' ? 'paid' : 'not paid'?>)</i></p>
+				<?php
+				    if( $p['type'] == 'fixed' ){
+				        $total+=$p['value'];
+				    }
+				    elseif( $p['type'] == 'fixed' ){
+				        $s = $p['value'] * $posted["{$type}_budget"] / 100;
+				        $total += $s;
+				    }
+				    else{}
+
+				?>
+				<?php endforeach;?>
+
+
+			</li>
+			<li class="item">
+				<label for="">Package Total Paid</label>
+				<strong><?php echo esc_attr($posted["{$type}_package_total"])?></strong>
+			</li>
+			<li class="item">
+				<label for="">Total Fees</label>
+				<strong><?php echo $total;?></strong>
+			</li>
+			<li class="item">
+				<label for="consignment_discount">Discount</label>
+				<input type="text" name="consignment_discount" id="consignment_discount" value="<?php echo esc_attr($posted["{$type}_discount"])?>">
+			</li>
 
 		</ul>
 	<?php
@@ -875,14 +924,13 @@ function save_consignment_metabox_data( $post_id ){
 		return;
 	}
 
-	//die();
-
 	$fields = array(
 		'consignment_item' => '',
 		'consignment_brand' => '',
 		'consignment_style' => '',
 		'consignment_model' => ''	,
 		'consignment_budget' => '',
+		'consignment_discount' => '',
 		'consignment_other_details' => '',
 		'consignment_included' => ''
 	);
@@ -905,7 +953,7 @@ function save_consignment_metabox_data( $post_id ){
 	update_post_meta( $post_id, '_product_image_gallery', implode( ',', $attachment_ids ) );
 
 	if( isset( $_REQUEST['save'] ) and ( esc_attr( $_REQUEST['save']) == 'Publish as a Product' or  esc_attr( $_REQUEST['save']) == 'Update product' ))
-		publish_as_product($post_id);
+		publish_as_product($post_id, 'consignment');
 }
 
 add_action( 'save_post', 'save_consignment_metabox_data' );

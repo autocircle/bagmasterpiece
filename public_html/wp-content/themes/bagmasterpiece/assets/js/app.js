@@ -40,6 +40,12 @@
 					value: 'watches'
 				}
 			],
+			notifications: [			               
+			               {
+			            	   label: 'SMS',
+			            	   value: 'sms'
+			               },
+			],
 			currency : {}
 		};
 		$scope.data = {			
@@ -58,7 +64,8 @@
 			whatsapp:'',
 			viber:'',							
 			currency:'',			
-			subscriptions:[]
+			subscriptions:[],
+			notifications:[]
 		};
 
 		$scope.pass = {
@@ -103,6 +110,13 @@
 			else{
 				$scope.data.subscriptions = [];
 			}
+			
+			if( typeof data.notifications != "string" && data.notifications.length > 0 ){
+				$scope.data.notifications = data.notifications;
+			}
+			else{
+				$scope.data.notifications = [];
+			}
 		};
 
 		$scope.scrollToTop = function(){
@@ -112,7 +126,7 @@
 			});
 		};
 
-		$scope.submitForm = function(){
+		$scope.submitForm = function(){console.log($scope.data);
 			$scope.processing = true;
 			$scope.error = [];
 			$http({
@@ -214,7 +228,7 @@
 
 	}])
 
-	app.controller('consignmentController', ['$scope', '$timeout', '$http', function($scope, $timeout, $http){
+	app.controller('consignmentController', ['$scope', '$timeout', '$http', 'ngDialog', function($scope, $timeout, $http, ngDialog){
 		
 		/* $scope declaration starts */
 		
@@ -254,6 +268,9 @@
 				receiptPic:0,
 				hasReceipt:0,
 				hasReceiptNot:0,
+				packageID:0,
+				packageData: {},
+				packageDataTotal: 0
 			},
 			packageData: {}
 		};		
@@ -377,6 +394,26 @@
 		$scope.selectPackage = function(packageId){
 			$scope.param.packageID = packageId;
 			$scope.breakDown = $scope.param.packageData[$scope.param.packageID];
+			
+			for( var i in $scope.breakDown.fee){
+
+				if( $scope.breakDown.fee.hasOwnProperty(i) ){
+					
+					if( $scope.breakDown.fee[i].id == 'authentication' ){
+						if( $scope.param.formData.hasReceipt ){
+							$scope.breakDown.fee[i].set = 0;
+						}
+						else if( $scope.param.formData.hasReceiptNot ){
+							$scope.breakDown.fee[i].set = 1;
+						}
+					}
+					
+				}
+			}
+			
+			$scope.param.formData.packageID = packageId; 
+			$scope.param.formData.packageData = $scope.breakDown;
+			console.log($scope.param.formData.packageData);
 			$scope.next();
 		};
 
@@ -503,10 +540,22 @@
 			for( var i in d){
 
 				if( d.hasOwnProperty(i) ){
-					if( d[i].id )
-					amount += parseInt(d[i].value);
+					
+					if( d[i].set == '1' ){
+						if( d[i].type == 'percent' ){
+							var p = parseInt(d[i].value);
+							var val = $scope.param.formData.productInfo.budget * p / 100;
+							amount += val;
+						}
+						else if( d[i].type == 'fixed' ){
+							amount += parseInt(d[i].value);
+						}
+						else{}						
+					}
+					
 				}
 			}
+			$scope.param.formData.packageDataTotal = amount;
 			return amount;
 		};
 		
@@ -525,11 +574,21 @@
 			var fromparam = [];
 			var P = $scope.param.formParam.otherData;
 
+			console.log($scope.param.formData);
+						
 			for( var i in P ){
 				if( P.hasOwnProperty(i) ){
 					fromparam.push(P[i].data.slug);
 				}
 			}
+			
+			var saving = ngDialog.open({
+				template: '<p class="processing-message"><span class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></span></p><p class="processing-message">Saving...</p>',
+				plain: true,
+				closeByDocument: false,
+				closeByEscape: false
+			});
+					
 
 			$http({
 				method: 'POST',
@@ -542,9 +601,26 @@
 				}
 	        })
 			.success(function(data) {
-				// console.log(data);
-				if(data.status == 200 && data.redirect_to != '')
-					location.href = data.redirect_to;
+				console.log(data);
+				
+				saving.close();
+				
+				var dialog = ngDialog.open({
+					template: '<p class="success-message"><span class="glyphicon glyphicon-saved" aria-hidden="true"></span></p><p class="success-message">Saved Successfully!</p>',
+					plain: true,
+					closeByDocument: false,
+					closeByEscape: false
+				});
+				
+				setTimeout(function () {
+					dialog.close();
+					if(data.status == 200 && data.redirect_to != ''){
+						location.href = data.redirect_to;
+					}
+						
+				}, 2000);
+				
+				
 			});
 		};
 
@@ -568,7 +644,8 @@
 
 		$scope.getPackages = function(){
 			$http.get(admin_ajax + '?action=get_consignment_prices')
-			.success(function(data) {				
+			.success(function(data) {			
+				console.log(data);	
 				$scope.param.packageData = data;				
 			});
 		};
@@ -860,7 +937,7 @@
 					concierge_id:concierge_id
 				}
 			})
-			.success(function(data) {
+			.success(function(data) {console.log(data);
 				if(data.status == 200 && data.redirect_to != ''){
 					
 					saving.close();
@@ -878,6 +955,8 @@
 					}, 2000);
 					
 				}
+			}).error(function(data){
+				console.error(data);
 			});
 		};
 		

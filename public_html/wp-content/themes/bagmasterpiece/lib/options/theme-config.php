@@ -439,34 +439,56 @@
                 		'desc'   => __( '<p class="description">Pricing for Home Kit Package.</p>', 'redux-framework-demo' ),
                 		'subsection' => true,
                 		'fields' => array(
+                    		    array(
+                    		        'id'       => 'h-shipping-type',
+                    		        'type'     => 'select',
+                    		        'title'    => __( 'Shipping Price Type', 'redux-framework-demo' ),
+                    		        'options'  => array(
+                    		            'fixed' => 'Fixed Amount',
+                    		            'percent' => 'Percent'
+                    		        ),
+                    		        'default'  => 'fixed',
+                    		    ),
                 				array(
-                						'id'       => 'h-shipping-kit',
+                						'id'       => 'h-shipping-amount',
                 						'type'     => 'text',
-                						'title'    => __( 'Shipping Kit Price', 'redux-framework-demo' ),
+                						'title'    => __( 'Shipping Price Amount', 'redux-framework-demo' ),
                 						'validate' => 'numeric',
                 						'default'  => '150',
                 				),
-                				array(
-                						'id'       => 'h-setup-escrow',
-                						'type'     => 'text',
-                						'title'    => __( 'Setup Escrow.com Transaction', 'redux-framework-demo' ),
-                						'validate' => 'numeric',
-                						'default'  => '0',
-                				),
-                				array(
-                						'id'       => 'h-shipping',
-                						'type'     => 'text',
-                						'title'    => __( 'Shipping', 'redux-framework-demo' ),
-                						'validate' => 'numeric',
-                						'default'  => '450',
-                				),
-                				array(
-                						'id'       => 'h-inspect',
-                						'type'     => 'text',
-                						'title'    => __( 'Inspect Bag and Verify', 'redux-framework-demo' ),
-                						'validate' => 'numeric',
-                						'default'  => '0',
-                				),
+                    		    array(
+                    		        'id'       => 'h-handling',
+                    		        'type'     => 'text',
+                    		        'title'    => __( 'Handling Cost', 'redux-framework-demo' ),
+                    		        'validate' => 'numeric',
+                    		        'default'  => '400',
+                    		    ),
+                    		    array(
+                    		        'id'       => 'h-comission-type',
+                    		        'type'     => 'select',
+                    		        'title'    => __( 'Comission Fee Type', 'redux-framework-demo' ),
+                    		        'options'  => array(
+                    		            'fixed' => 'Fixed Amount',
+                    		            'percent' => 'Percent'
+                    		        ),
+                    		        'default'  => 'fixed',
+                    		    ),
+                    		    array(
+                    		        'id'       => 'h-comission',
+                    		        'type'     => 'text',
+                    		        'title'    => __( 'Comission Fee Amount', 'redux-framework-demo' ),
+                    		        'validate' => 'numeric',
+                    		        'default'  => '1500',
+                    		    ),
+                    		    array(
+                    		        'id'       => 'h-authentication',
+                    		        'type'     => 'text',
+                    		        'title'    => __( 'Authentication', 'redux-framework-demo' ),
+                    		        'validate' => 'numeric',
+                    		        'default'  => '550',
+                    		    ),
+
+
                 			)
                 );
 
@@ -480,9 +502,19 @@
                 		'subsection' => true,
                 		'fields' => array(
                 				array(
+                						'id'       => 'a-shipping-type',
+                						'type'     => 'select',
+                						'title'    => __( 'Shipping Price Type', 'redux-framework-demo' ),
+                						'options'  => array(
+                				                'fixed' => 'Fixed Amount',
+                				                'percent' => 'Percent'
+                				        ),
+                						'default'  => 'fixed',
+                				),
+                				array(
                 						'id'       => 'a-shipping',
                 						'type'     => 'text',
-                						'title'    => __( 'Shipping Price', 'redux-framework-demo' ),
+                						'title'    => __( 'Shipping Price Amount', 'redux-framework-demo' ),
                 						'validate' => 'numeric',
                 						'default'  => '550',
                 				),
@@ -500,10 +532,20 @@
                 						'validate' => 'numeric',
                 						'default'  => '150',
                 				),
+                    		    array(
+                    		        'id'       => 'a-comission-type',
+                    		        'type'     => 'select',
+                    		        'title'    => __( 'Comission Fee Type', 'redux-framework-demo' ),
+                    		        'options'  => array(
+                    		            'fixed' => 'Fixed Amount',
+                    		            'percent' => 'Percent'
+                    		        ),
+                    		        'default'  => 'fixed',
+                    		    ),
                 				array(
-                						'id'       => 'a-consignment',
+                						'id'       => 'a-comission',
                 						'type'     => 'text',
-                						'title'    => __( 'Consignment Fee', 'redux-framework-demo' ),
+                						'title'    => __( 'Comission Fee Amount', 'redux-framework-demo' ),
                 						'validate' => 'numeric',
                 						'default'  => '1500',
                 				),
@@ -539,9 +581,11 @@
 //                 		'fields' => array()
 //                 );
 
-/*
+
 
 //	these fields below are not required
+
+/*
 
                 $this->sections[] = array(
                     'icon'       => 'el-icon-website',
@@ -1482,10 +1526,10 @@
                         ),
                     )
                 );
-
+*/
 // not required these fields above
 
-*/
+
                 $this->sections[] = array(
                     'title'  => __( 'Import / Export', 'redux-framework-demo' ),
                     'desc'   => __( 'Import and Export your Redux Framework settings from file, text or URL.', 'redux-framework-demo' ),

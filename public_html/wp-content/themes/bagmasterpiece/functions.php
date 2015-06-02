@@ -61,6 +61,17 @@ function BMP_wp_enqueue_scripts(){
 
 add_action('wp_enqueue_scripts','BMP_wp_enqueue_scripts');
 
+
+add_action('admin_menu', 'BMP_remove_add_new');
+
+function BMP_remove_add_new(){
+    global $submenu;
+
+    unset($submenu['edit.php?post_type=concierge_post'][10]);
+    unset($submenu['edit.php?post_type=consignment_post'][10]);
+    unset($submenu['edit.php?post_type=offer_post'][10]);
+}
+
 //	metabox
 // Add meta boxes in page template
 
@@ -199,7 +210,7 @@ function add_login_out_item_to_menu( $items, $args ){
 	return $items;
 }
 
-add_filter( 'wp_nav_menu_items', 'add_login_out_item_to_menu', 50, 2 );
+//add_filter( 'wp_nav_menu_items', 'add_login_out_item_to_menu', 50, 2 );
 
 //	disable admin bar in front end
 add_filter('show_admin_bar', '__return_false');
@@ -596,12 +607,25 @@ function make_offer_modal_box(){
 
 
 
+add_filter('manage_product_posts_columns', 'manage_product_posts_columns' );
 add_filter('manage_offer_post_posts_columns', 'manage_offer_posts_columns' );
+add_filter('manage_consignment_offer_posts_columns', 'manage_consignment_offer_columns' );
 add_filter('manage_concierge_post_posts_columns', 'manage_concierge_posts_columns' );
 add_filter('manage_consignment_post_posts_columns', 'manage_consignment_posts_columns' );
+
+
+add_action('manage_product_posts_custom_column', 'manage_product_posts_custom_column', 10, 2);
 add_action('manage_offer_post_posts_custom_column', 'manage_offer_posts_custom_column', 10, 2);
+add_action('manage_consignment_offer_posts_custom_column', 'manage_consignment_offer_custom_column', 10, 2);
 add_action('manage_concierge_post_posts_custom_column', 'manage_concierge_posts_custom_column', 10, 2);
 add_action('manage_consignment_post_posts_custom_column', 'manage_consignment_posts_custom_column', 10, 2);
+
+function manage_product_posts_columns( $columns ){
+
+    $columns['consigner'] = 'Consigner';
+
+    return $columns;
+}
 
 function manage_offer_posts_columns($columns){
 	unset($columns['title']);
@@ -615,6 +639,26 @@ function manage_offer_posts_columns($columns){
 	$columns['offer_status'] = 'Offer Status';
 	$columns['concierge'] = '';
 	$columns['view'] = '';
+
+	unset($columns['date']);
+	unset($columns['title']);
+
+	return $columns;
+}
+
+function manage_consignment_offer_columns($columns){
+	unset($columns['title']);
+
+	$columns['c_date'] = 'Date';
+	$columns['c_item'] = 'Item';
+	$columns['consigner'] = 'Consigner';
+	$columns['offer_by'] = 'Offer By';
+	$columns['consignment_budget'] = 'Price';
+	$columns['offer_budget'] = 'Offer';
+	$columns['counter_offer_budget'] = 'Counter Offer';
+	$columns['offer_status'] = 'Offer Status';
+	//$columns['consignment'] = '';
+	//$columns['view'] = '';
 
 	unset($columns['date']);
 	unset($columns['title']);
@@ -661,7 +705,32 @@ function manage_consignment_posts_columns($columns){
 	return $columns;
 }
 
+function manage_product_posts_custom_column($column_name, $post_id){
+    if( $column_name == 'consigner' ){
+
+        $consigner = get_post_meta($post_id, '_consigner', true);
+
+        $user = get_user_by('id', $consigner);
+
+        if( $user && !is_wp_error($user)){
+            echo $user->get('user_nicename');
+        }
+        else{
+            echo '-';
+        }
+
+    }
+}
+
 function manage_offer_posts_custom_column($column_name, $post_id){
+
+    if( is_admin() ){
+        $decimal = 2;
+    }
+    else{
+        $decimal = 6;
+    }
+
     switch($column_name){
         case 'c_date':
             echo get_the_date('Y-m-d',$post_id);
@@ -728,23 +797,23 @@ function manage_offer_posts_custom_column($column_name, $post_id){
         case 'concierge_budget':
             $concierge_post_id = get_post_meta($post_id, 'concierge_id', true);
             $amount = get_post_meta($concierge_post_id, 'concierge_budget', true);
-            echo wc_price($amount, array('decimals' => 0));
+            echo wc_price($amount, array('decimals' => $decimal));
             break;
         case 'offer_budget':
             $amount = get_post_meta($post_id, 'offer_budget', true);
             $counter = get_post_meta($post_id, 'offer_reoffer_counter', true);
             if( $counter ){
-                echo '<small><del>' . wc_price($amount, array('decimals' => 0)) . '</del></small>&nbsp;';
-                echo wc_price($counter, array('decimals' => 0));
+                echo '<small><del>' . wc_price($amount, array('decimals' => $decimal)) . '</del></small>&nbsp;';
+                echo wc_price($counter, array('decimals' => $decimal));
             }
             else{
-                echo wc_price($amount, array('decimals' => 0));
+                echo wc_price($amount, array('decimals' => $decimal));
             }
             break;
         case 'counter_offer_budget':
             $amount = get_post_meta($post_id, 'offer_reoffer', true);
             if($amount){
-            echo wc_price($amount, array('decimals' => 0));
+            echo wc_price($amount, array('decimals' => $decimal));
             }
             break;
         case 'view':
@@ -755,6 +824,115 @@ function manage_offer_posts_custom_column($column_name, $post_id){
             break;
     }
 }
+
+function manage_consignment_offer_custom_column($column_name, $post_id){
+
+    $store_currency = isset( $_COOKIE['woocommerce_current_currency'] ) ? $_COOKIE['woocommerce_current_currency'] : null;
+    $target_currency = get_option('woocommerce_currency');
+
+    if( is_admin() || $store_currency == $target_currency || !$store_currency || !$target_currency){
+        $decimal = 2;
+    }
+    else{
+        $decimal = 6;
+    }
+
+    switch($column_name){
+        case 'c_date':
+            echo get_the_date('Y-m-d',$post_id);
+            break;
+        case 'c_item':
+            $consigned_product = (int) get_post_meta($post_id,'orig_offer_product_id', true);
+            echo '<a class="button-secondary" href="' . get_permalink($consigned_product) . '">View Item</a> ';
+            break;
+        case 'consigner':
+            $consigned_product = get_post_meta($post_id,'orig_offer_product_id', true);
+            $user_id = get_post_meta($consigned_product,'_consigner', true);
+
+            if( !$user_id ){
+                echo '-';
+                break;
+            }
+
+            $data = get_userdata($user_id);
+
+            if( $data ){
+                if( $data->first_name && $data->last_name ){
+                    echo  $data->first_name .' ' .$data->last_name;
+                }
+                else{
+                    echo $data->user_email;
+                }
+            }
+            else{
+                echo '<i>&lt;invalid user&gt;</i>';
+            }
+            break;
+        case 'offer_by':
+            $user_id = get_post_meta($post_id,'offer_user_id', true);
+
+            if( !$user_id ){
+                echo '-';
+                break;
+            }
+
+            $data = get_userdata($user_id);
+
+            if( $data ){
+                if( $data->first_name && $data->last_name ){
+                    echo  $data->first_name .' ' .$data->last_name;
+                }
+                else{
+                    echo $data->user_email;
+                }
+            }
+            else{
+                echo '<i>&lt;invalid user&gt;</i>';
+            }
+            break;
+        case 'offer_status':
+            if( bmp_is_offer_status($post_id, 'declined') ):?>
+			<span><i>Cancelled</i></span>
+			<?php elseif( bmp_is_offer_status($post_id, 'accepted') ):?>
+			<span><i>Accepted</i></span>
+			<?php elseif( bmp_is_offer_status($post_id, 'completed') ):?>
+		    <span><i>Completed</i></span>
+			<?php else:?>
+			<span><i>Active</i></span>
+			<?php endif;
+            break;
+        case 'consignment_budget':
+            $consigned_product = get_post_meta($post_id,'orig_offer_product_id', true);
+            $amount = get_post_meta($consigned_product, '_price', true);
+            echo wc_price($amount, array('decimals' => $decimal));
+            break;
+        case 'offer_budget':
+            $amount = get_post_meta($post_id, 'orig_offer_amount', true);
+            $counter = get_post_meta($post_id, 'offer_reoffer_counter', true);
+            if( $counter ){
+                echo '<small><del>' . wc_price($amount, array('decimals' => $decimal)) . '</del></small>&nbsp;';
+                echo wc_price($counter, array('decimals' => $decimal));
+            }
+            else{
+                echo wc_price($amount, array('decimals' => $decimal));
+            }
+            break;
+        case 'counter_offer_budget':
+            $amount = get_post_meta($post_id, 'offer_reoffer', true);
+            if($amount){
+            echo wc_price($amount, array('decimals' => $decimal));
+            }
+
+            break;
+        case 'view':
+            global $bagmasterpiece;
+            $concierge_page_id = $bagmasterpiece['concierge-page-id'];
+            $view_offer = add_query_arg(array('view'=>'offer','offer_id'=>$post_id),get_permalink($concierge_page_id));
+            echo '<a target="_blank" href="' .$view_offer. '" class="button-secondary">View Offer</a>';
+            break;
+    }
+}
+
 function manage_concierge_posts_custom_column($column_name, $post_id){
 
 	switch($column_name){
@@ -854,9 +1032,15 @@ function manage_consignment_posts_custom_column($column_name, $post_id){
 			echo get_the_date('Y-m-d',$post_id);
 			break;
 		case 'item' :
-		    $item_id =  get_post_meta($post_id,'consignment_item', true);
-			$item = get_term_by('id', $item_id, 'concierge');
-			echo $item->name;
+		    $data =  get_post_meta($post_id,'consignment_item', true);
+			$term = get_term_by('id', $data, 'concierge');
+
+			if( $term ){
+			    echo $term->name;
+			}
+			else{
+			    echo $data;
+			}
 			break;
 		case 'brand' :
 		    $data = get_post_meta($post_id,'consignment_brand', true);
@@ -1141,7 +1325,7 @@ function BMP_handle_dropped_media() {
 
 	$upload_dir = wp_upload_dir();
 	$upload_path = $upload_dir['path'] . DIRECTORY_SEPARATOR;
-	$num_files = count($_FILES['file']['tmp_name']);
+	//$num_files = count($_FILES['file']['tmp_name']);
 
 	$newupload = 0;
 
@@ -1237,7 +1421,75 @@ function BMP_save_concierge(){
 		update_post_meta( $c_id, 'offer', $offer );
 	}
 
+	if( $type == 'offer' ){
+	    /*
+	     concierge_offer_received
+	     concierge_offer_accepted
+	     concierge_offer_declined
+	     consignment_submitted
+	     concierge_submitted
+	     */
 
+	    $concierge_post = get_post($obj[ 'concierge_id' ]);
+
+	    $userdata = get_userdata($concierge_post->post_author);
+	    $to = $userdata->user_email;
+
+	    $data = array();
+
+	    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+        $data['body'] = 'New offer is made for your concierge item.';
+        $data['subject'] = 'New offer is submitted';
+        $data['sms'] = 'New offer is submitted. For details please check your email.';
+
+	    $data = apply_filters('concierge_offer_received', $data);
+
+	    @wp_mail($to, $data['subject'], $data['body']);
+
+    	if( sms_notification_enabled( $concierge_post->post_author ) ){
+
+    	    $number = get_user_meta( $concierge_post->post_author, 'contact_number', true);
+
+    	    if( $number ){
+    	        send_sms( $number, $data['sms'], $to );
+    	    }
+    	}
+
+	    //if( get_user_meta() )
+
+	}
+	else{
+    	/*
+    	concierge_offer_received
+    	concierge_offer_accepted
+    	concierge_offer_declined
+    	consignment_submitted
+    	concierge_submitted
+    	*/
+        $userdata = get_userdata($user_id);
+    	$to = $userdata->user_email;
+
+    	$data = array();
+
+    	$data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    	$data['body'] = 'New concierge submission is successful. You can view it in your dashboard.';
+    	$data['subject'] = 'Concierge submission successful';
+    	$data['sms'] = 'Concierge submission successful. For details please check your email.';
+
+    	$data = apply_filters('concierge_submitted', $data);
+
+    	@wp_mail($to, $data['subject'], $data['body']);
+
+    	if( sms_notification_enabled($user_id) ){
+
+    	    $number = get_user_meta( $user_id, 'contact_number', true);
+
+    	    if( $number ){
+    	        send_sms( $number, $data['sms'] );
+    	    }
+    	}
+
+	}
 
 	echo json_encode(array('status'=>200,'message'=>'Successfull', 'redirect_to' => $obj['return_url']));
 
@@ -1283,7 +1535,7 @@ function BMP_save_consignment(){
 		"{$type}_brand" 				=> $product_info['brand'] == '9999' ? $product_info['brandCustom'] : $product_info['brand'],
 		"{$type}_style" 				=> $product_info['style'] == '9999' ? $product_info['styleCustom'] : $product_info['style'],
 		"{$type}_model" 				=> $product_info['model'] == '9999' ? $product_info['modelCustom'] : $product_info['model'],
-		"{$type}_budget" 				=> $product_info['budget'],
+		"{$type}_budget" 				=> get_converted_currency($product_info['budget'], true),
 		"{$type}_other_details" 		=> $product_info['otherNote'],
 		"{$type}_included" 				=> $form_data['included'],
 		"{$type}_bank_account_name" 	=> $financial['bankAccountName'],
@@ -1297,10 +1549,14 @@ function BMP_save_consignment(){
 		"{$type}_receipt" 				=> $form_data['hasReceipt'],
 		"{$type}_params" 				=> $obj['formParam'],
 		"{$type}_package_id" 			=> $obj['packageId'],
-		"{$type}_consigner" 			=> $user_id
+		"{$type}_consigner" 			=> $user_id,
+		"{$type}_package_data" 			=> $form_data['packageData'],
+		"{$type}_package_total" 		=> $form_data['packageDataTotal'],
 	);
 
 	foreach( $params as $param ){
+	    if( $param == '' )
+	        continue;
 		$posted[ $type .'_'. $param ] = $product_info['otherData'][$param];
 	}
 
@@ -1312,16 +1568,48 @@ function BMP_save_consignment(){
 
 	$product_id = $bagmasterpiece['consignment-product'];
 
-	if($obj["formData"]["hasReceiptNot"]){
-		WC()->cart->add_to_cart($product_id, 1, '', array(), array('_consignment_id' => $post_id));
-		echo json_encode(array('status'=>200,'message'=>'Successfull', 'redirect_to' => WC()->cart->get_checkout_url()));
-		die();
-	}
-
 	// @todo redirect to list
 
-	echo json_encode(array('status'=>200,'message'=>'Successful', 'redirect_to' => $obj['return_url']));
-	die();
+	/*
+	 concierge_offer_received
+	 concierge_offer_accepted
+	 concierge_offer_declined
+	 consignment_submitted
+	 concierge_submitted
+	 */
+	$userdata = get_userdata($user_id);
+	$to = $userdata->user_email;
+
+	$data = array();
+
+	$data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    $data['body'] = 'New consignment submission is successful. You can view it in your dashboard.';
+    $data['subject'] = 'Consignment submission successful';
+    $data['sms'] = 'Consignment submission successful. For details please check your email.';
+
+	$data = apply_filters('consignment_submitted', $data);
+
+	@wp_mail($to, $data['subject'], $data['body']);
+	@wp_mail(get_option('admin_email'), $data['subject'], $data['body']);
+
+	if( sms_notification_enabled( $user_id ) ){
+
+	    $number = get_user_meta( $user_id, 'contact_number', true);
+
+	    if( $number ){
+	        send_sms( $number, $data['sms'] );
+	    }
+	}
+
+	//if($obj["formData"]["hasReceiptNot"]){
+	    WC()->cart->empty_cart();
+	    WC()->cart->add_to_cart($product_id, 1, '', array(), array('_consignment_id' => $post_id));
+	    echo json_encode(array('status'=>200,'message'=>'Successfull', 'redirect_to' => WC()->cart->get_checkout_url()));
+	    die();
+	//}
+
+	//echo json_encode(array('status'=>200,'message'=>'Successful', 'redirect_to' => $obj['return_url']));
+	//die();
 }
 
 
@@ -1399,7 +1687,8 @@ function BMP_save_profile(){
 		'whatsapp'		=> 'Whatsapp ID',
 		'viber'			=> 'Viber ID',
 		'currency'		=> 'Currency',
-		'subscriptions'	=> 'Mailing list subscription'
+		'subscriptions'	=> 'Mailing list subscription',
+		'notifications'	=> 'Notification Preferences',
 
 );
 
@@ -1420,7 +1709,8 @@ function BMP_save_profile(){
 		'whatsapp'		=> $obj['data']['whatsapp'],
 		'viber'			=> $obj['data']['viber'],
 		'currency'		=> $obj['data']['currency'],
-		'subscriptions'	=> $obj['data']['subscriptions']
+		'subscriptions'	=> $obj['data']['subscriptions'],
+		'notifications'	=> $obj['data']['notifications']
 
 	);
 
@@ -1489,60 +1779,148 @@ function BMP_get_consignment_prices(){
 					'name' => 'All-in Package',
 					'fee' => array(
 								array(
-									'id' => 'shipping',
-									'name' => 'Shipping',
-									'value' => $bagmasterpiece['a-shipping']
-								),
-								array(
-									'id' => 'handling',
-									'name' => 'Handling',
-									'value' => $bagmasterpiece['a-handling']
-								),
-								array(
-									'id' => 'photographer',
-									'name' => 'Photograoher\'s Fee',
-									'value' => $bagmasterpiece['a-photographer']
-								),
-								array(
-									'id' => 'consignment',
-									'name' => 'Consignment Fee',
-									'value' => $bagmasterpiece['a-consignment']
-								),
-								array(
-									'id' => 'authentication',
-									'name' => 'Authentication',
-									'value' => $bagmasterpiece['a-authentication']
-								)
+        							'id' => 'shipping',
+        							'name' => 'Shipping',
+        						    'type' => $bagmasterpiece['a-shipping-type'],
+        							'value' =>$bagmasterpiece['a-shipping'],
+								    'set' => '1',
+								    'options' => array(
+								        array(
+								            'name' => 'Pay Now',
+								            'value' => '1'
+								        ),
+								        array(
+								            'name' => 'Pay Later',
+								            'value' => '0'
+								        ),
+								    )
+        						),
+        						array(
+        							'id' => 'handling',
+        							'name'=> 'Handling',
+        						    'type' => 'fixed',
+        							'value' => $bagmasterpiece['a-handling'],
+        						    'set' => '1',
+        						    'options' => array(
+        						        array(
+        						            'name' => 'Pay Now',
+        						            'value' => '1'
+        						        )
+        						    )
+        						),
+        						array(
+        							'id' => 'photographer',
+        							'name'=> 'Photographer',
+        						    'type' => 'fixed',
+        							'value' => $bagmasterpiece['a-photographer'],
+        						    'set' => '1',
+        						    'options' => array(
+        						        array(
+        						            'name' => 'Pay Now',
+        						            'value' => '1'
+        						        ),
+        						        array(
+        						            'name' => 'No photographer needed',
+        						            'value' => '0'
+        						        ),
+        						    )
+        						),
+        						array(
+        							'id' => 'comission',
+        							'name'=> 'Comission',
+        							'type' => $bagmasterpiece['a-comission-type'],
+        						    'value' => $bagmasterpiece['a-comission'],
+        						    'set' => '0',
+        						    'options' => array(
+        						        array(
+        						            'name' => 'Pay Now',
+        						            'value' => '1'
+        						        ),
+        						        array(
+        						            'name' => 'Pay Later',
+        						            'value' => '0'
+        						        ),
+        						    )
+        						),
+        						array(
+        							'id' => 'authentication',
+        							'name'=> 'Authentication',
+        							'type' => 'fixed',
+        						    'value' => $bagmasterpiece['a-authentication'],
+        						    'set' => '0',
+        						    'options' => array(
+        						        array(
+        						            'name' => 'Pay Now',
+        						            'value' => '1'
+        						        )
+        						    )
+        						)
 						)
 				),
 			2 => array(
 					'name' => 'Home Kit Package',
 					'fee' => array(
 						array(
-							'id' => 'shippingKit',
-							'name' => 'Shipping Kit',
-							'value' => $bagmasterpiece['h-shipping-kit']
-						),
-						array(
-							'id' => 'deposit',
-							'name'=> 'Deposit Received',
-							'value' => get_deposit_amount()
-						),
-						array(
-							'id' => 'escrow',
-							'name' => 'Setup Escrow.com transection',
-							'value' => $bagmasterpiece['h-setup-escrow']
-						),
-						array(
 							'id' => 'shipping',
 							'name' => 'Shipping',
-							'value' => $bagmasterpiece['h-shipping']
+						    'type' => $bagmasterpiece['h-shipping-type'],
+							'value' =>$bagmasterpiece['h-shipping-amount'],
+						    'set' => '0',
+						    'options' => array(
+						        array(
+						            'name' => 'Pay Now',
+						            'value' => '1'
+						        ),
+						        array(
+						            'name' => 'Pay Later',
+						            'value' => '0'
+						        ),
+						    )
 						),
 						array(
-							'id' => 'inspect',
-							'name' => 'Inspect Bag and Verify',
-							'value' => $bagmasterpiece['h-inspect']
-						)
+							'id' => 'handling',
+							'name'=> 'Handling',
+						    'type' => 'fixed',
+							'value' => $bagmasterpiece['h-handling'],
+						    'set' => '1',
+						    'options' => array(
+						        array(
+						            'name' => 'Pay Now',
+						            'value' => '1'
+						        )
+						    )
+
+						),
+						array(
+							'id' => 'comission',
+							'name'=> 'Comission',
+							'type' => $bagmasterpiece['h-comission-type'],
+						    'value' => $bagmasterpiece['h-comission'],
+						    'set' => '0',
+						    'options' => array(
+						        array(
+						            'name' => 'Pay Now',
+						            'value' => '1'
+	                           ),
+						        array(
+						            'name' => 'Pay Later',
+						            'value' => '0'
+	                           ),
+						    )
+						),
+        						array(
+        							'id' => 'authentication',
+        							'name'=> 'Authentication',
+        							'type' => 'fixed',
+        						    'value' => $bagmasterpiece['h-authentication'],
+        						    'set' => '0',
+        						    'options' => array(
+        						        array(
+        						            'name' => 'Pay Now',
+        						            'value' => '1'
+        						        )
+        						    )
+        						)
 					)
 				)
 		);
@@ -1558,7 +1936,7 @@ function get_deposit_amount(){
 	return 0;
 }
 
-//add_action('woocommerce_before_calculate_totals', 'consignment_product_price_adjust' );
+add_action('woocommerce_before_calculate_totals', 'consignment_product_price_adjust' );
 
 function consignment_product_price_adjust($cart_object ) {
 
@@ -1574,29 +1952,37 @@ function consignment_product_price_adjust($cart_object ) {
 			continue;
 
 		$package_id = get_post_meta( $value['_consignment_id'], 'consignment_package_id', true);
+		//$recipt = get_post_meta( $value['_consignment_id'], 'consignment_receipt', true);
 
-		if( $package_id == 1 ){
+		//if( $recipt ){
+		//    $custom = floatval($_product->get_price());
+		//}
+		//else{
+		    $custom = 0;
+		//}
 
-			$custom = 0;
-			$custom += floatval( $bagmasterpiece['a-shipping'] );
-			$custom += floatval( $bagmasterpiece['a-handling'] );
-			$custom += floatval( $bagmasterpiece['a-photographer'] );
-			$custom += floatval( $bagmasterpiece['a-consignment'] );
-			$custom += floatval( $bagmasterpiece['a-authentication']);
+		$custom += (float) get_post_meta( $value['_consignment_id'], 'consignment_package_total', true);
 
-			$cart_object->cart_contents[$key]['data']->price = $custom;
-		}
-		elseif( $package_id == 2 ){
+		$cart_object->cart_contents[$key]['data']->price = $custom;
 
-			$custom = 0;
-			$custom += floatval( $bagmasterpiece['h-shipping-kit'] );
-			$custom += floatval( $bagmasterpiece['h-shipping'] );
-			$custom += floatval( $bagmasterpiece['h-setup-escrow'] );
-			$custom += floatval( $bagmasterpiece['h-inspect'] );
-			$custom += floatval( get_deposit_amount() );
+// 		if( $package_id == 1 ){
+// 			$custom += floatval( $bagmasterpiece['a-shipping'] );
+// 			$custom += floatval( $bagmasterpiece['a-handling'] );
+// 			$custom += floatval( $bagmasterpiece['a-photographer'] );
+// 			$custom += floatval( $bagmasterpiece['a-consignment'] );
+// 			$custom += floatval( $bagmasterpiece['a-authentication']);
 
-			$cart_object->cart_contents[$key]['data']->price = $custom;
-		}
+// 			$cart_object->cart_contents[$key]['data']->price = $custom;
+// 		}
+// 		elseif( $package_id == 2 ){
+// 			$custom += floatval( $bagmasterpiece['h-shipping-kit'] );
+// 			$custom += floatval( $bagmasterpiece['h-shipping'] );
+// 			$custom += floatval( $bagmasterpiece['h-setup-escrow'] );
+// 			$custom += floatval( $bagmasterpiece['h-inspect'] );
+// 			$custom += floatval( get_deposit_amount() );
+
+// 			$cart_object->cart_contents[$key]['data']->price = $custom;
+// 		}
 
 
 	}
@@ -1640,7 +2026,7 @@ function processs_consignment_order_id_with_order($order_id){
 }
 
 
-function publish_as_product($referer){
+function publish_as_product($referer, $type = 'offer'){
 
 	if( defined('SAVING_AS_PRODUCT') ){
 		return;
@@ -1649,6 +2035,8 @@ function publish_as_product($referer){
 	$consignment = new Consignment_Data($referer);
 
 	$post_id = get_post_meta( $referer ,'_product_id', true );
+
+	$new = false;
 
 	if( $post_id == '' ){
 
@@ -1666,11 +2054,10 @@ function publish_as_product($referer){
 		define('SAVING_AS_PRODUCT', true);
 
 		$post_id = wp_insert_post( $post, true );
+		$new = true;
 	}
 
 	if($post_id){
-
-
 
 		update_post_meta( $post_id, '_thumbnail_id', $consignment->get('thumbnail') );
 
@@ -1708,8 +2095,16 @@ function publish_as_product($referer){
 		update_post_meta( $referer, '_product_id', $post_id);
 		update_post_meta( $referer, '_status', '__published');
 
+		//deposite params
+		update_post_meta( $post_id, '_wc_deposits_enable_deposit', 'yes');
+		update_post_meta( $post_id, '_wc_deposits_force_deposit', 'yes');
+		update_post_meta( $post_id, '_wc_deposits_amount_type', 'percent');
+		update_post_meta( $post_id, '_wc_deposits_deposit_amount', '25');
 
-		$raw_params = get_post_meta($referer, 'offer_params', true);
+
+
+        $raw_params = get_post_meta($referer, $type . '_params', true);
+
 		update_post_meta( $post_id, 'offer_params', $raw_params );
 
 		if( $raw_params != '' ){
@@ -1717,11 +2112,41 @@ function publish_as_product($referer){
 
 			if( is_array($params) ){
 				foreach( $params as $i => $p ){
-					$meta = get_post_meta($referer,"offer_{$p}", true);
+					$meta = get_post_meta($referer,"{$type}_{$p}", true);
 					update_post_meta( $post_id, "offer_{$p}" ,$meta );
 				}
 			}
 		}
+
+		if( $new ){
+
+    		$user_id = $consignment->get('consigner');
+    		$userdata = get_userdata($user_id);
+    		$to = $userdata->user_email;
+
+    		$data = array();
+
+    		$data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    	    $data['body'] = 'Your consigned item is reviewed by the admin and published in the boutique section. You can view it in your dashboard.';
+    	    $data['subject'] = 'Consignemnt item published';
+    	    $data['sms'] = 'Consignemnt item published. For details please check your email.';
+
+    		$data = apply_filters('consignment_published', $data);
+
+    		@wp_mail($to, $data['subject'], $data['body']);
+
+    		if( sms_notification_enabled( $user_id ) ){
+
+    		    $number = get_user_meta( $user_id, 'contact_number', true);
+
+    		    if( $number ){
+    		        send_sms( $number, $data['sms'] );
+    		    }
+    		}
+
+		}
+
+
 	}
 
 }
@@ -1759,19 +2184,48 @@ class Consignment_Data{
 
 		switch( $key ){
 			case 'item':
-				$item = get_term_by('id', $this->get_meta('consignment_item'), 'concierge');
-				return $item->name;
-				break;
+			    $data = $this->get_meta('consignment_item');
+			    $term = get_term_by('id', $data,'concierge');
+
+			    if( $term ){
+			        return $term->name;
+			    }
+			    else{
+			        return $data;
+			    }
+			    break;
 			case 'brand':
-				$item = get_term_by('id', $this->get_meta('consignment_brand'), 'concierge');
-				return $item->name;
-				break;
+			    $data = $this->get_meta('consignment_brand');
+			    $term = get_term_by('id', $data,'concierge');
+
+			    if( $term ){
+			        return $term->name;
+			    }
+			    else{
+			        return $data;
+			    }
+			    break;
 			case 'style':
-				$item = get_term_by('id', $this->get_meta('consignment_style'), 'concierge');
-				return $item->name;
-				break;
+			    $data = $this->get_meta('consignment_style');
+			    $term = get_term_by('id', $data,'concierge');
+
+			    if( $term ){
+			        return $term->name;
+			    }
+			    else{
+			        return $data;
+			    }
+			    break;
 			case 'model':
-				return $this->get_meta('consignment_model');
+				$data = $this->get_meta('consignment_model');
+				$term = get_term_by('id', $data,'concierge');
+
+				if( $term ){
+				    return $term->name;
+				}
+				else{
+				    return $data;
+				}
 				break;
 			case 'size':
 				return $this->get_meta('consignment_size');
@@ -1801,7 +2255,21 @@ class Consignment_Data{
 				return $this->get_consigner();
 				break;
 			case 'budget':
-				return $this->get_meta('consignment_budget');
+			    $budget = (float) $this->get_meta('consignment_budget');
+				$total = $budget;
+				$data = $this->get_meta('consignment_package_data');
+				foreach( $data['fee'] as $p ){
+    			    if( $p['type'] == 'fixed' ){
+    			        $total += (float) $p['value'];
+    			    }
+    			    elseif( $p['type'] == 'fixed' ){
+    			        $s = $p['value'] * $budget / 100;
+    			        $total += $s;
+    			    }
+    			    else{}
+				}
+				$total -= (float) $this->get_meta('consignment_discount');
+				return $total;
 				break;
 			case 'other_details':
 				return $this->get_meta('consignment_other_details');
@@ -2130,11 +2598,199 @@ function bmp_offer_action(){
 
 	if( esc_attr($_GET['action']) == 'cancel' ){
 
-		if( isset( $_GET['offer_id'] ) and get_post_type( esc_attr($_GET['offer_id']) ) == 'offer_post' ){
+		if( isset( $_GET['offer_id'] ) and ( get_post_type( esc_attr($_GET['offer_id']) ) == 'offer_post' or get_post_type( esc_attr($_GET['offer_id']) ) == 'consignment_offer') ){
 
 			$offer_id = (int) esc_attr($_GET['offer_id']);
 
 			$r = update_post_meta( $offer_id, '_offer_status', 'declined');
+
+			/*
+			 concierge_offer_received
+			 concierge_offer_accepted
+			 concierge_offer_declined
+			 consignment_submitted
+			 concierge_submitted
+			 */
+
+			$post = get_post($offer_id);
+
+			if( get_post_type( esc_attr($_GET['offer_id']) ) == 'consignment_offer' ){
+			    $user_id = get_post_meta($offer_id, 'offer_user_id', true);
+			}
+			elseif( get_post_type( esc_attr($_GET['offer_id']) ) == 'offer_post' ){
+			    if($post->post_author == get_current_user_id()){
+
+			        $concierge_id = get_post_meta($offer_id, 'concierge_id', true);
+			        $concierge_post = get_post($concierge_id);
+
+			        $user_id = $concierge_post->post_author;
+
+			    }
+			    else{
+			        $offer_post = get_post($offer_id);
+			        $user_id = $offer_post->post_author;
+			    }
+			}
+			else{
+
+			}
+
+
+			$userdata = get_userdata($user_id);
+			$to = $userdata->user_email;
+
+			if( get_post_type( esc_attr($_GET['offer_id']) ) == 'consignment_offer' ){
+
+			    global $wpdb;
+
+			    $post_id = (int) $_GET['offer_id'];
+
+			    // Get current data for Offer prior to save
+			    $post_data = get_post($post_id);
+
+			    // if buyercountered-offer previous then use buyer counter values
+			    $is_offer_buyer_countered_status = ( $post_data->post_status == 'buyercountered-offer' ) ? true : false;
+
+			    $table = $wpdb->prefix . "posts";
+			    $data_array = array(
+			        'post_status' => 'declined-offer',
+			        'post_modified' => date("Y-m-d H:i:s", current_time('timestamp', 0 )),
+			        'post_modified_gmt' => date("Y-m-d H:i:s", current_time('timestamp', 1 ))
+			    );
+			    $where = array('ID' => $post_id);
+			    $wpdb->update( $table, $data_array, $where );
+
+			    // Filter Post Status Label
+			    $post_status_text = 'Declined';
+
+			    // set update notes
+			    $offer_notes = (isset($_POST['angelleye_woocommerce_offer_status_notes']) && $_POST['angelleye_woocommerce_offer_status_notes'] != '') ? $_POST['angelleye_woocommerce_offer_status_notes'] : '';
+
+			    /**
+			     * Email customer declined email template
+			     * @since   0.1.0
+			     */
+			    // set recipient email
+			    $user_id = get_post_meta($post_id, 'offer_user_id', true);
+			    $user_data = get_userdata($user_id);
+			    //$recipient = get_post_meta($post_id, 'offer_email', true);
+			    $recipient = $user_data->get('user_email');
+			    $offer_id = $post_id;
+			    $offer_uid = get_post_meta($post_id, 'offer_uid', true);
+			    $offer_name = get_post_meta($post_id, 'offer_name', true);
+			    $offer_email = $recipient;
+
+			    $product_id = get_post_meta($post_id, 'offer_product_id', true);
+			    $_pf = new WC_Product_Factory;
+			    $product = $_pf->get_product( $product_id );
+
+			    $product_qty = ( $is_offer_buyer_countered_status ) ? get_post_meta($post_id, 'offer_buyer_counter_quantity', true) : get_post_meta($post_id, 'offer_quantity', true);
+			    $product_price_per = ( $is_offer_buyer_countered_status ) ? get_post_meta($post_id, 'offer_buyer_counter_price_per', true) : get_post_meta($post_id, 'offer_price_per', true);
+			    $product_total = ($product_qty * $product_price_per);
+
+			    // if buyercountered-offer status, update postmeta values for quantity,price,amount
+			    if( $is_offer_buyer_countered_status )
+			    {
+			        update_post_meta( $post_id, 'offer_quantity', $product_qty );
+			        update_post_meta( $post_id, 'offer_price_per', $product_price_per );
+			        update_post_meta( $post_id, 'offer_amount', $product_total );
+			    }
+
+			    $offer_args = array(
+			        'recipient' => $recipient,
+			        'offer_email' => $offer_email,
+			        'offer_name' => $offer_name,
+			        'offer_id' => $offer_id,
+			        'offer_uid' => $offer_uid,
+			        'product_id' => $product_id,
+			        'product_url' => $product->get_permalink(),
+			        'product' => $product,
+			        'product_qty' => $product_qty,
+			        'product_price_per' => get_converted_currency($product_price_per),
+			        'product_total' => get_converted_currency($product_total),
+			        'offer_notes' => $offer_notes
+			    );
+
+			    $offer_args['product_title_formatted'] = $product->get_formatted_name();
+
+
+			    // the email we want to send
+			    $email_class = 'WC_Declined_Offer_Email';
+
+			    // load the WooCommerce Emails
+			    $wc_emails = new WC_Emails();
+			    $emails = $wc_emails->get_emails();
+
+			    // select the email we want & trigger it to send
+			    $new_email = $emails[$email_class];
+			    $new_email->recipient = $recipient;
+			    $new_email->trigger($offer_args);
+
+			    // to whom the product belongs
+
+			    $consigner = get_post_meta($product_id, '_consigner', true);
+			    $consigner = get_userdata($consigner);
+			    @wp_mail($consigner->get('user_email'), 'Offer Declined', 'You have declined an offer. Product link: ' . get_permalink($product_id) );
+
+			    // Insert WP comment
+			    $comment_text = "<span>Updated - Status: </span>";
+			    $comment_text.= $post_status_text;
+
+			    // include update notes
+			    if(isset($offer_notes) && $offer_notes != '')
+			    {
+			        $comment_text.= '</br>'. nl2br($offer_notes);
+			    }
+
+			    $data = array(
+			        'comment_post_ID' => '',
+			        'comment_author' => 'admin',
+			        'comment_author_email' => '',
+			        'comment_author_url' => '',
+			        'comment_content' => $comment_text,
+			        'comment_type' => '',
+			        'comment_parent' => 0,
+			        'user_id' => get_current_user_id(),
+			        'comment_author_IP' => $_SERVER['REMOTE_ADDR'],
+			        'comment_agent' => '',
+			        'comment_date' => date("Y-m-d H:i:s", current_time('timestamp', 0 )),
+			        'comment_approved' => 1,
+			    );
+			    $new_comment_id = wp_insert_comment( $data );
+
+			    // insert comment meta
+			    if( $new_comment_id )
+			    {
+			        add_comment_meta( $new_comment_id, 'angelleye_woocommerce_offer_id', $post_id, true );
+			    }
+
+			}
+			elseif( get_post_type( esc_attr($_GET['offer_id']) ) == 'offer_post' ){
+			    $data = array();
+
+			    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+			    $data['body'] = 'Your offer is declined. View it in your dashboard';
+			    $data['subject'] = 'Offer is declined';
+			    $data['sms'] = 'Offer is declined. For details please check your email.';
+
+			    $data = apply_filters('concierge_offer_declined', $data);
+
+			    @wp_mail($to, $data['subject'], $data['body']);
+			}
+			else{
+
+			}
+
+			$data_sms = 'Offer is declined. For details please check your email.';
+
+			if( sms_notification_enabled( $user_id ) ){
+
+			    $number = get_user_meta( $user_id, 'contact_number', true);
+
+			    if( $number ){
+			        send_sms( $number, $data_sms );
+			    }
+			}
 
 			if( $r ){
 				$message = 1;
@@ -2167,7 +2823,9 @@ function bmp_offer_action(){
 			    $reoffer = get_post_meta($offer_id, 'offer_reoffer', true);
 			    $counter = get_post_meta($offer_id, 'offer_reoffer_counter', true);
 
-			    $concierge_id = get_post_meta($offer_id, 'concierge_id', true);
+			    $concierge_id = (int) get_post_meta($offer_id, 'concierge_id', true);
+			    update_post_meta( $concierge_id, '_concierge_status', 'accepted');
+
 			    $concierge_post = get_post($concierge_id);
 
 			    update_post_meta( $offer_id, 'concierge_author', $concierge_post->post_author);
@@ -2183,6 +2841,53 @@ function bmp_offer_action(){
 
 				$r = update_post_meta( $offer_id, '_offer_status', 'accepted');
 
+				/*
+				 concierge_offer_received
+				 concierge_offer_accepted
+				 concierge_offer_declined
+				 consignment_submitted
+				 concierge_submitted
+				 */
+
+				if($self_requested){
+
+				    $concierge_id = get_post_meta($offer_id, 'concierge_id', true);
+				    $concierge_post = get_post($concierge_id);
+
+				    $user_id = $concierge_post->post_author;
+				    $userdata = get_userdata($user_id);
+				    $to = $userdata->user_email;
+
+				}
+				else{
+				    $offer_post = get_post($offer_id);
+    			    $user_id = $offer_post->post_author;
+    			    $userdata = get_userdata($user_id);
+    			    $to = $userdata->user_email;
+				}
+
+
+
+				$data = array();
+
+				$data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+				$data['body'] = 'Your offer is accepted. View it in your dashboard';
+				$data['subject'] = 'Offer is accepted';
+				$data['sms'] = 'Offer is accepted. For details please check your email.';
+
+				$data = apply_filters('concierge_offer_accepted', $data);
+
+				@wp_mail($to, $data['subject'], $data['body']);
+
+				if( sms_notification_enabled( $user_id ) ){
+
+				    $number = get_user_meta( $user_id, 'contact_number', true);
+
+				    if( $number ){
+				        send_sms( $number, $data['sms'] );
+				    }
+				}
+
 				if( $r ){
 					$message = 4;
 				}
@@ -2194,6 +2899,172 @@ function bmp_offer_action(){
 				$message = 6;
 			}
 
+
+		}
+		elseif( isset( $_GET['offer_id'] ) and get_post_type( esc_attr($_GET['offer_id']) ) == 'consignment_offer' ){
+
+		    $offer_id = (int) esc_attr($_GET['offer_id']);
+
+		    $post = get_post($offer_id);
+
+		    $consignment = (int) get_post_meta( $offer_id , 'orig_offer_product_id', true );
+		    $self_requested = get_post_meta($consignment, '_consigner', true) == get_current_user_id();
+
+		    $reoffer = get_post_meta($offer_id, 'orig_offer_amount', true);
+		    $counter = get_post_meta($offer_id, 'offer_reoffer_counter', true);
+
+		    if( $reoffer && !$self_requested){
+		        update_post_meta( $offer_id, 'offer_budget', $reoffer);
+		    }
+		    elseif( $self_requested && $counter ){
+		        update_post_meta( $offer_id, 'offer_budget', $counter);
+		    }
+
+		    global $wpdb;
+		    $post_id = $offer_id;
+
+		    // Get current data for Offer prior to save
+		    $post_data = get_post($post_id);
+
+		    $table = $wpdb->prefix . "posts";
+		    $data_array = array(
+		        'post_status' => 'accepted-offer',
+		        'post_modified' => date("Y-m-d H:i:s", current_time('timestamp', 0 )),
+		        'post_modified_gmt' => date("Y-m-d H:i:s", current_time('timestamp', 1 ))
+		    );
+		    $where = array('ID' => $post_id);
+		    $wpdb->update( $table, $data_array, $where );
+
+		    $r = update_post_meta( $offer_id, '_offer_status', 'accepted');
+		    update_post_meta( $offer_id, 'offer_accepter', get_current_user_id() );
+		    update_post_meta( $offer_id, 'offer_accepted_date', time() );
+
+		    // Filter Post Status Label
+		    $post_status_text = 'Accepted';
+
+		    // send mail :/
+
+		    // set recipient email
+		    $user_id = get_post_meta($post_id, 'offer_user_id', true);
+		    $user_data = get_userdata($user_id);
+		    //$recipient = get_post_meta($post_id, 'offer_email', true);
+		    $recipient = $user_data->get('user_email');
+		    $offer_id = $post_id;
+		    $offer_uid = get_post_meta($post_id, 'offer_uid', true);
+		    $offer_name = get_post_meta($post_id, 'offer_name', true);
+		    $offer_email = $recipient;
+
+		    $product_id = get_post_meta($post_id, 'offer_product_id', true);
+		    $_pf = new WC_Product_Factory;
+		    $product = $_pf->get_product( $product_id );
+
+		    // if buyercountered-offer previous then use buyer counter values
+		    $is_offer_buyer_countered_status = ( $post_data->post_status == 'buyercountered-offer' ) ? true : false;
+
+		    $product_qty = ( $is_offer_buyer_countered_status ) ? get_post_meta($post_id, 'offer_buyer_counter_quantity', true) : get_post_meta($post_id, 'offer_quantity', true);
+		    $product_price_per = ( $is_offer_buyer_countered_status ) ? get_post_meta($post_id, 'offer_buyer_counter_price_per', true) : get_post_meta($post_id, 'offer_budget', true);
+		    $product_total = ($product_qty * $product_price_per);
+
+		    // if buyercountered-offer status, update postmeta values for quantity,price,amount
+		    if( $is_offer_buyer_countered_status )
+		    {
+		        update_post_meta( $post_id, 'offer_quantity', $product_qty );
+		        update_post_meta( $post_id, 'offer_price_per', $product_price_per );
+		        update_post_meta( $post_id, 'offer_amount', $product_total );
+		    }
+
+		    $offer_args = array(
+		        'recipient' => $recipient,
+		        'offer_email' => $offer_email,
+		        'offer_name' => $offer_name,
+		        'offer_id' => $offer_id,
+		        'offer_uid' => $offer_uid,
+		        'product_id' => $product_id,
+		        'product_url' => $product->get_permalink(),
+		        'product' => $product,
+		        'product_qty' => $product_qty,
+		        'product_price_per' => get_converted_currency($product_price_per),
+		        'product_total' => get_converted_currency($product_total),
+		        'offer_notes' => ''
+		    );
+
+		    $offer_args['product_title_formatted'] = $product->get_formatted_name();
+
+		    // the email we want to send
+		    $email_class = 'WC_Accepted_Offer_Email';
+
+		    // load the WooCommerce Emails
+		    $wc_emails = new WC_Emails();
+		    $emails = $wc_emails->get_emails();
+
+		    // to him who made the offer originally
+
+		    // select the email we want & trigger it to send
+		    $new_email = $emails[$email_class];
+		    $new_email->recipient = $recipient;
+		    $new_email->trigger($offer_args);
+
+		    // to whom the product belongs
+
+		    $consigner = get_post_meta($product_id, '_consigner', true);
+		    $consigner = get_userdata($consigner);
+            @wp_mail($consigner->get('user_email'), 'Offer Accepted', 'You have accepted an offer. Product link: ' . get_permalink($product_id) );
+
+		    // to admin
+            $consigner_name = $consigner->first_name .' ' . $consigner->last_name;
+            $offer_by_name = $user_data->first_name .' ' . $user_data->last_name;
+            @wp_mail(get_option('admin_email'), 'Offer Accepted', 'An offer is accepted. Product: ' . get_permalink($product_id) . ', Consigner: '. $consigner_name .',Offer by: ' . $offer_by_name  );
+
+
+		    // Insert WP comment
+		    $comment_text = "<span>Updated - Status: </span>";
+		    $comment_text.= $post_status_text;
+
+		    // include update notes
+		    if(isset($offer_notes) && $offer_notes != '')
+		    {
+		        $comment_text.= '</br>'. nl2br($offer_notes);
+		    }
+
+		    $data = array(
+		        'comment_post_ID' => '',
+		        'comment_author' => 'admin',
+		        'comment_author_email' => '',
+		        'comment_author_url' => '',
+		        'comment_content' => $comment_text,
+		        'comment_type' => '',
+		        'comment_parent' => 0,
+		        'user_id' => get_current_user_id(),
+		        'comment_author_IP' => $_SERVER['REMOTE_ADDR'],
+		        'comment_agent' => '',
+		        'comment_date' => date("Y-m-d H:i:s", current_time('timestamp', 0 )),
+		        'comment_approved' => 1,
+		    );
+		    $new_comment_id = wp_insert_comment( $data );
+
+		    // insert comment meta
+		    if( $new_comment_id )
+		    {
+		        add_comment_meta( $new_comment_id, 'angelleye_woocommerce_offer_id', $post_id, true );
+		    }
+
+		    $datasms = 'Your offer is accepted. For details please check your email.';
+
+		    if( sms_notification_enabled( $user_id ) ){
+
+		        $number = get_user_meta( $user_id, 'contact_number', true);
+
+		        if( $number ){
+		            send_sms( $number, $datasms );
+		        }
+		    }
+
+		    if( $r ){
+		        $message = 4;
+		    }
+		    else{
+		        $message = 2;
+		    }
 
 		}
 		else{
@@ -2528,7 +3399,7 @@ function BMP_count_active_offers($offers = array()){
 	$total = 0;
 
 	foreach( $offers as $offer ){
-		if( bmp_is_offer_status($offer, '') ){
+		if( bmp_is_offer_status($offer, '') and is_offer_available($offer)){
 			$total++;
 		}
 	}
@@ -2589,7 +3460,10 @@ function number_exixts($number = ''){
 
     global $wpdb;
 
-    $query = $wpdb->prepare("SELECT DISTINCT `user_id` FROM `{$wpdb->prefix}usermeta` WHERE meta_key = 'contact_number' and meta_value = '%s'", $number);
+    //$q = "SELECT DISTINCT UM.user_id FROM `{$wpdb->prefix}usermeta` AS UM LEFT JOIN `{$wpdb->prefix}users` AS U ON UM.user_id = U.ID WHERE UM.meta_key = 'contact_number' and UM.meta_value = '01674137365' ";
+    //$query = $wpdb->prepare("SELECT DISTINCT UM.user_id FROM `{$wpdb->prefix}usermeta` AS UM LEFT JOIN `{$wpdb->prefix}uses` AS U ON UM.user_id = U.ID WHERE UM.meta_key = 'contact_number' and UM.meta_value = '%s'", $number);
+
+    $query = $wpdb->prepare("SELECT DISTINCT UM.user_id FROM `{$wpdb->prefix}usermeta` AS UM LEFT JOIN `{$wpdb->prefix}users` AS U ON UM.user_id = U.ID WHERE UM.meta_key = 'contact_number' and UM.meta_value = '%s'", $number);
 
     return $wpdb->get_results( $query, ARRAY_A );
 
@@ -2883,26 +3757,96 @@ function get_converted_currency( $amount = 0, $reverse = false){
 
     global $woocommerce_currency_converter;
 
-    $amount = number_format($amount, 2, '.', '');
+    //$amount = number_format($amount, 2, '.', '');
     $new_amount = $amount;
 
     if( $reverse ){
-        $store_currency = $_COOKIE['woocommerce_current_currency'];
+        $store_currency = isset( $_COOKIE['woocommerce_current_currency'] ) ? $_COOKIE['woocommerce_current_currency'] : null;
         $target_currency = get_option('woocommerce_currency');
     }
     else{
         $store_currency = get_option('woocommerce_currency');
-        $target_currency = $_COOKIE['woocommerce_current_currency'];
+        $target_currency = isset( $_COOKIE['woocommerce_current_currency'] ) ? $_COOKIE['woocommerce_current_currency'] : null;
     }
 
     if ($store_currency && $target_currency && $woocommerce_currency_converter->rates->$target_currency && $woocommerce_currency_converter->rates->$store_currency) {
 
         $new_amount = ( $amount / $woocommerce_currency_converter->rates->$store_currency ) * $woocommerce_currency_converter->rates->$target_currency;
 
-        $new_amount = round($new_amount, 2);
+        //$new_amount = round($new_amount, 2);
     }
 
     return $new_amount;
+}
+
+add_action('wp_ajax_reoffer_consignment', 'BMP_consignment_reoffer');
+
+function BMP_consignment_reoffer(){
+    $offer_id = intval( esc_attr($_REQUEST['offer_id']) );
+    $amount = floatval( esc_attr($_REQUEST['re_offer_amount']) );
+
+    if( !$offer_id or get_post_type($offer_id) != 'consignment_offer'){
+
+        echo json_encode(array('status' => '400', 'message' => 'Invalid offer.'));
+        die();
+    }
+
+    if( !$amount ){
+        echo json_encode(array('status' => '400', 'message' => 'Invalid amount.'));
+        die();
+    }
+
+    $amount = get_converted_currency($amount, true);
+
+    $post = get_post($offer_id);
+    $self_requested = $post->post_author == get_current_user_id();
+
+    if( $self_requested ){
+        $status = update_post_meta($offer_id, 'offer_reoffer', "$amount");
+
+        $from_id = get_current_user_id();
+        $to_id = get_post_meta($offer_id,'offer_user_id', true);
+
+    }
+    else{
+        $status = update_post_meta($offer_id, 'offer_reoffer_counter', "$amount");
+
+        $from_id = get_post_meta($offer_id,'offer_user_id', true);
+        $to_id = get_current_user_id();
+    }
+
+    update_post_meta($offer_id, 'offer_modifier', get_current_user_id());
+
+    $data = get_userdata( $from_id );
+    $to1 = $data->user_email;
+
+    $data = get_userdata( $to_id );
+    $to2 = $data->user_email;
+
+    //  who made this
+    @wp_mail($to1, 'Counter offer', 'You have made a counter offer.');
+
+    // who didn't made this
+    @wp_mail($to2, 'Counter Offer', 'A counter offer is made upon your offer.');
+
+    $datasms = 'A counter offer is made upon your offer. For details please check your email.';
+
+    if( sms_notification_enabled( $to_id ) ){
+
+        $number = get_user_meta( $to_id, 'contact_number', true);
+
+        if( $number ){
+            send_sms( $number, $datasms );
+        }
+    }
+
+    if( $status ){
+        echo json_encode(array('status' => '200', 'message' => 'Successfully submitted.'));
+        die();
+    }
+
+    echo json_encode(array('status' => '400', 'message' => 'System error! Pleas try again.'));
+    die();
 }
 
 add_action('wp_ajax_reoffer', 'BMP_concierge_reoffer');
@@ -2936,8 +3880,6 @@ function BMP_concierge_reoffer(){
         $status = update_post_meta($offer_id, 'offer_reoffer', $amount);
     }
 
-
-
     if( $status ){
         echo json_encode(array('status' => '200', 'message' => 'Successfully submitted.'));
         die();
@@ -2945,5 +3887,240 @@ function BMP_concierge_reoffer(){
 
     echo json_encode(array('status' => '400', 'message' => 'System error! Pleas try again.'));
     die();
+
+}
+
+
+/*** email notifications ***/
+
+/**
+1. When receive an offer in their concierge.
+2. When accept an offer.
+3. When decline an offer.
+4. When consignment is submitted.
+5. When submits an concierge
+
+concierge_offer_received
+concierge_offer_accepted
+concierge_offer_declined
+consignment_submitted
+consignment_published
+concierge_submitted
+
+ */
+
+add_filter('concierge_offer_received', 'concierge_offer_received');
+
+function concierge_offer_received( $data ){
+
+    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    $data['body'] = 'New offer is made for your concierge item.';
+    $data['subject'] = 'New offer is submitted';
+    $data['sms'] = 'New offer is submitted. For details please check your email.';
+
+    return $data;
+}
+
+add_filter('concierge_offer_accepted', 'concierge_offer_accepted');
+
+function concierge_offer_accepted( $data ){
+
+    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    $data['body'] = 'Your offer is accepted. View it in your dashboard';
+    $data['subject'] = 'Offer is accepted';
+    $data['sms'] = 'Offer is accepted. For details please check your email.';
+
+    return $data;
+}
+
+add_filter('concierge_offer_declined', 'concierge_offer_declined');
+
+function concierge_offer_declined( $data ){
+
+    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    $data['body'] = 'Your offer is declined. View it in your dashboard';
+    $data['subject'] = 'Offer is declined';
+    $data['sms'] = 'Offer is declined. For details please check your email.';
+
+    return $data;
+}
+
+add_filter('consignment_submitted', 'consignment_submitted');
+
+function consignment_submitted( $data ){
+
+    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    $data['body'] = 'New consignment submission is successful. You can view it in your dashboard.';
+    $data['subject'] = 'Consignment submission successful';
+    $data['sms'] = 'Consignment submission successful. For details please check your email.';
+
+    return $data;
+}
+
+add_filter('concierge_submitted', 'concierge_submitted');
+
+function concierge_submitted( $data ){
+
+    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    $data['body'] = 'New concierge submission is successful. You can view it in your dashboard.';
+    $data['subject'] = 'Concierge submission successful';
+    $data['sms'] = 'Concierge submission successful. For details please check your email.';
+
+    return $data;
+}
+
+add_filter('consignment_published', 'consignment_published');
+
+function consignment_published( $data ){
+
+    $data['headers'] = 'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>' . "\r\n";
+    $data['body'] = 'Your consigned item is reviewed by the admin and published in the boutique section. You can view it in your dashboard.';
+    $data['subject'] = 'Consignemnt item published';
+    $data['sms'] = 'Consignemnt item published. For details please check your email.';
+
+    return $data;
+}
+
+
+add_action( 'delete_user', 'clean_after_delete_user' );
+
+function clean_after_delete_user( $user_id ){
+
+    $posted = array(
+        '__verification_code',
+        'first_name',
+        'last_name',
+        'dob',
+        'gender',
+        'nos',
+        'address',
+        'city',
+        'state',
+        'country',
+        'zip',
+        'contact_number',
+    	'email',
+        'whatsapp',
+        'viber',
+        'currency',
+        'subscriptions',
+        '_commision_type',
+        '_commision_amount',
+        '__just_registered',
+        'currency'
+    );
+
+    foreach( $posted as $key => $value  ){
+        delete_user_meta( $user_id, $key);
+    }
+
+}
+
+add_filter( 'wp_mail_from_name', function( $name ) {
+    return 'BagMasterPiece';
+});
+
+
+add_action('tempate_redirect', 'save_notification_preference');
+
+function save_notification_preference(){
+//    form-preference
+
+    if( isset( $_REQUEST['save_subscriptions_my_profile'] ) and wp_verify_nonce($_REQUEST['save_subscriptions_my_profile'], 'save_notification_preference_details') ){
+        var_dump($_POST);
+    }
+}
+
+function sms_notification_enabled( $user_id ){
+    $arg = get_user_meta($user_id, 'notifications', true);
+
+    if( !is_array($arg) )
+        return false;
+
+    return in_array('sms', $arg);
+}
+
+function send_sms( $number, $body, $to = '' ){
+
+    require_once LIBPATH . 'TwilioServices/Twilio.php';
+
+    // Set our AccountSid and AuthToken from twilio.com/user/account
+
+    // test
+    // 	$AccountSid = "AC62b269ee6c114fe044cbbb552974a22c";
+    // 	$AuthToken = "ac980c66627bd585ae8503edf3b73e54";
+
+    // live
+    $AccountSid = "AC73609d2123081f0ecb66987b6bd9bd12";
+    $AuthToken = "544040f019620e1a98b6438f956677c1";
+
+    // Instantiate a new Twilio Rest Client
+    $client = new Services_Twilio($AccountSid, $AuthToken);
+
+    /* Your Twilio Number or Outgoing Caller ID */
+    $from = '+18555330188';
+
+
+    try {
+//         $client->account->messages->create(array(
+//             'To' => $number,
+//             'From' => "+18555330188",
+//             'Body' => $body,
+//         ));
+        $client->account->sms_messages->create($from, $number, $body);
+        //@wp_mail($to, 'success', 'yeahh');
+
+    } catch (Exception $e) {
+
+        global $exception;
+
+        $exception = $e->getMessage();
+
+        //var_dump($exception);
+        //die();
+
+        //@wp_mail($to, 'error', $exception);
+    }
+
+}
+
+
+function is_consigned_product( $post_id = 0 ){
+
+    if( ! $post_id ){
+        return false;
+    }
+
+    $consigner = get_post_meta( $post_id, '_consigner', true);
+
+    if( $consigner == '' ){
+        return false;
+    }
+
+    $user = get_user_by('id', $consigner);
+
+    if( $user && !is_wp_error($user)){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+add_filter('get_the_date', 'ov_offer_accepted_date', 10, 3);
+
+function ov_offer_accepted_date( $the_date, $d, $post ){
+    if( get_post_type($post) == 'consignment_offer' ){
+
+        $post_id = $post->ID;
+
+        $ts = (int) get_post_meta($post_id, 'offer_accepted_date', true);
+
+        if( $ts ){
+            $the_date = date( $d, $ts );
+        }
+    }
+
+    return $the_date;
 
 }

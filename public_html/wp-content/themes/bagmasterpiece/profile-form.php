@@ -22,7 +22,8 @@ $data = array(
 		'whatsapp' =>'',
 		'viber' =>'',
 		'currency' =>'',
-		'subscriptions' => array()
+		'subscriptions' => array(),
+        'notifications' => array()
 
 	);
 
@@ -35,6 +36,10 @@ wp_get_current_user();
 foreach( $data as $key => $value ){
 	$data[$key] = get_user_meta($user_id, $key, true);
 }
+
+//$arg = get_user_meta(get_current_user_id(), 'notifications', true) ;
+
+//var_dump( sms_notification_enabled( get_current_user_id() ) );
 
 $data['email'] = $current_user->data->user_email;
 
@@ -316,8 +321,36 @@ $data['email'] = $current_user->data->user_email;
 					</div>
 
 
+					<div class="panel panel-area">
+						<div class="panel-heading panel-bg" role="tab" id="headingThree">
+						    <h4 class="panel-title">Notification Preferences</h4>
+					    </div>
+					    <div id="collapseThree" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingThree" aria-expanded="false">
+						    <div class="panel-body panel-body-style">
 
+								<div class="row placeholder panel-pad">
+									<div class="col-md-12">
+										<div class="form-group">
+											<div class="checkbox">
+												<p class="subscribed"><span>Receive Notificatins via:</span></p>
+											</div>
+										</div>
+										<div class="form-group">
+											<div class="subscripton-items">
+												<label>
+													<input type="checkbox" value="email" name="notifications-email" disabled="disabled" class="disabled" checked="checked"> Email
+												</label>
+												<label data-ng-repeat="a in param.notifications" data-ng-class="{'fat':$index==2}" >
+													<input type="checkbox" value="{{a.value}}" data-check-list='data.notifications'> {{a.label}}
+												</label>
+											</div>
+										</div>
+									</div>
+								</div>
 
+						    </div>
+					    </div>
+					</div>
 				</div>
 			</div>
 			<div class="col-md-12">
@@ -339,7 +372,45 @@ $data['email'] = $current_user->data->user_email;
 					    </div>
 					    <div id="collapseFour" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingFour" aria-expanded="false">
 						    <div class="panel-body panel-body-style">
+						      <!--  -- >
+						        <form action="<?php echo get_permalink( $bagmasterpiece['profile-page-id'] )?>" method="post">
 
+                                	<div class="panel panel-area">
+                						<div class="panel-heading panel-bg" role="tab" id="headingFour">
+                						    <h4 class="panel-title">Notification Preference</h4>
+                					    </div>
+                					    <div id="collapseFour" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingFour" aria-expanded="false">
+                						    <div class="panel-body panel-body-style">
+                								<div class="row placeholder">
+
+                                                    <div class="col-md-12">
+                										<div class="form-horizontal form-preference">
+                											<div class="form-group panel-form-style">
+                												<div class="col-sm-4">
+                												    <label for="currentpass" class="control-label"><span>Notification Preference</span></label>
+                												</div>
+                												<div class="col-sm-8">
+                												    <label><input type="checkbox" name="notification-email" checked="checked" disabled value="1"> EMAIL</label>
+                												    <label><input type="checkbox" name="notification-sms" value="1"> SMS</label>
+                												</div>
+                											</div>
+                										</div>
+                									</div>
+
+                								</div>
+                						    </div>
+                					    </div>
+                					</div>
+                					<div class="row">
+                					   <div class="col-md-12">
+                						    <p style="margin-top:15px;"></p>
+                                        	<p class="text-center">
+                                        		<?php wp_nonce_field( 'save_notification_preference_details', 'save_subscriptions_my_profile' ); ?>
+                					            <button type="submit" class="btn btn-default update-button"></button>
+                                        	</p>
+                						</div>
+                					</div>
+                                </form> <!-- #chnage password form -->
 						    </div>
 					    </div>
 					</div>
@@ -352,7 +423,7 @@ $data['email'] = $current_user->data->user_email;
 		    </div>
 		    <div role="tabpanel" <?php echo tab_active_class('profile', 'orders', 'tab-pane');?> id="orders">
 		    	<div class="col-md-12">
-		    		<?php wc_get_template( 'myaccount/my-orders.php' ); ?>
+		    		<?php wc_get_template( 'myaccount/my-orders.php', array( 'order_count' => -1 ) ); ?>
 		    	</div>
 		    </div>
 		    <div role="tabpanel" <?php echo tab_active_class('profile', 'change-pass', 'tab-pane');?> id="change-pass">
@@ -439,3 +510,62 @@ $data['email'] = $current_user->data->user_email;
 	</div>
 
 </div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="membershipPage" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+    	<div class="modal-content">
+    		<div class="modal-body">
+        		<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	      		<div class="row">
+	      			<div class="col-xs-6">
+	      				<img src="<?php echo get_template_directory_uri()?>/images/after_ogin_image.png">
+	      			</div>
+	      			<div class="col-xs-6">
+	      				<div class="text-center">
+		      				<h3>Welcome to</h3>
+		      				<h1>BagMasterPiece</h1>
+		      				<p class="sub">Become a VIP member by completing your profile</p>
+		      				<p><a class="btn btn-primary btn-custom-profile" href="<?php echo get_permalink($bagmasterpiece['profile-page-id']);?>">Member's Profile</a></p>
+		      				<p><a class="text-muted" href="#" data-dismiss="modal">Fill up Profile Later</a></p>
+		      			</div>
+	      			</div>
+	      		</div>
+      		</div>
+    	</div>
+  	</div>
+</div>
+	<!-- Modal -->
+<div class="modal fade" id="LoginMessage" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+    	<div class="modal-content">
+    		<div class="modal-body">
+        		<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	      		<div class="row">
+	      			<div class="col-xs-6">
+	      				<img src="<?php echo get_template_directory_uri()?>/images/after_ogin_image.png">
+	      			</div>
+	      			<div class="col-xs-6">
+	      				<h3>Welcome to</h3>
+	      				<h1>BagMasterPiece</h1>
+	      				<button type="button" class="btn btn-default" data-dismiss="modal">Fill up Profile Later</button>
+	      			</div>
+	      		</div>
+      		</div>
+    	</div>
+  	</div>
+</div>
+
+
+<script type="text/javascript">
+	jQuery(document).ready(function($){
+
+		<?php if( isset($_GET['message']) ):?>
+			$('#LoginMessage').modal('show');
+		<?php elseif( current_user_can('regular') ):?>
+			$('#membershipPage').modal('show');
+		<?php endif;?>
+	});
+
+</script>
